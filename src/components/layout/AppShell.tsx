@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Sidebar, type NavPage } from "./Sidebar";
 import { Topbar } from "./Topbar";
 
@@ -25,20 +25,29 @@ export const AppShell: React.FC<AppShellProps> = ({
 }) => {
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
+  useEffect(() => {
+    const lockScroll = mobileSidebarOpen && window.innerWidth < 1024;
+
+    document.documentElement.style.overflow = lockScroll ? "hidden" : "";
+    document.body.style.overflow = lockScroll ? "hidden" : "";
+
+    return () => {
+      document.documentElement.style.overflow = "";
+      document.body.style.overflow = "";
+    };
+  }, [mobileSidebarOpen]);
+
   return (
-    <div className="min-h-screen bg-[#F7F7F5] flex flex-col text-[#181C1A] antialiased">
-      {/* Sidebar */}
+    <div className="min-h-screen w-full overflow-x-hidden bg-canvas text-text-primary antialiased">
       <Sidebar
         currentPage={currentPage}
         onNavigate={onNavigate}
         isOpenMobile={mobileSidebarOpen}
         onCloseMobile={() => setMobileSidebarOpen(false)}
-        onOpenNewProject={onOpenNewProject}
         onOpenDocs={onOpenDocs}
       />
 
-      {/* Main View Area Offset by Sidebar width on desktop */}
-      <div className="lg:pl-64 flex flex-col min-h-screen">
+      <div className="min-h-screen w-full min-w-0 lg:pl-64">
         <Topbar
           onOpenMobileSidebar={() => setMobileSidebarOpen(true)}
           onOpenNewProject={onOpenNewProject}
@@ -47,8 +56,7 @@ export const AppShell: React.FC<AppShellProps> = ({
           onSearchChange={onSearchChange}
         />
 
-        {/* Main Content Area */}
-        <main className="w-full pt-14 flex-1 bg-[#F7FAF6]">
+        <main className="min-h-screen w-full min-w-0 overflow-x-hidden bg-canvas pt-14">
           {children}
         </main>
       </div>

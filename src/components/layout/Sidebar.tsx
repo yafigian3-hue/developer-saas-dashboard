@@ -81,10 +81,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
       <aside
         className={cn(
           "fixed left-0 top-0 h-screen w-64 bg-white border-r border-[#D9DDD7] z-40 flex flex-col justify-between select-none transition-transform duration-300 ease-in-out",
-          isOpenMobile ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
+          isOpenMobile ? "translate-x-0" : "-translate-x-full lg:translate-x-0",
         )}
       >
-        <div className="flex flex-col flex-1 overflow-y-auto">
+        <div className="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain">
           {/* Workspace Brand Header */}
           <div className="h-14 px-4 flex items-center justify-between border-b border-[#D9DDD7]/80 shrink-0">
             <div className="flex items-center gap-2.5">
@@ -110,7 +110,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
               </button>
             </div>
           </div>
-
           {/* Project Selector Pill */}
           <div className="p-3 border-b border-[#D9DDD7]/60 shrink-0">
             <button
@@ -130,7 +129,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <ChevronsUpDown className="w-4 h-4 text-[#58605B] shrink-0" />
             </button>
           </div>
-
           {/* Section: Overview Navigation */}
           <div className="px-3 py-3">
             <div className="font-label-sm text-[#58605B] uppercase tracking-wider px-2.5 mb-1.5 font-semibold">
@@ -151,7 +149,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       "w-full flex items-center justify-between px-2.5 py-1.5 rounded transition-colors text-left",
                       isActive
                         ? "bg-[#DCE5DD] text-[#265344] font-medium border-l-2 border-[#265344] pl-2"
-                        : "text-[#414945] hover:bg-[#E6E9E5] hover:text-[#181C1A]"
+                        : "text-[#414945] hover:bg-[#E6E9E5] hover:text-[#181C1A]",
                     )}
                   >
                     <div className="flex items-center gap-2">
@@ -164,7 +162,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                           "font-label-sm px-1.5 py-0.5 rounded",
                           item.badgeVariant === "live"
                             ? "bg-[#3F6B5B]/20 text-[#265344] border border-[#265344]/30 font-medium"
-                            : "bg-[#ECEFEB] text-[#414945]"
+                            : "bg-[#ECEFEB] text-[#414945]",
                         )}
                       >
                         {item.badge}
@@ -175,7 +173,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
               })}
             </nav>
           </div>
-
           {/* Section: Configuration */}
           <div className="px-3 py-1.5">
             <div className="font-label-sm text-[#58605B] uppercase tracking-wider px-2.5 mb-1.5 font-semibold">
@@ -192,7 +189,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   "w-full flex items-center justify-between px-2.5 py-1.5 rounded transition-colors text-left",
                   currentPage === "settings"
                     ? "bg-[#DCE5DD] text-[#265344] font-medium border-l-2 border-[#265344] pl-2"
-                    : "text-[#414945] hover:bg-[#E6E9E5] hover:text-[#181C1A]"
+                    : "text-[#414945] hover:bg-[#E6E9E5] hover:text-[#181C1A]",
                 )}
               >
                 <div className="flex items-center gap-2">
@@ -202,7 +199,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
               </button>
             </nav>
           </div>
-
           {/* Section: Backlog */}
           <div className="px-3 py-1.5 opacity-60">
             <div className="font-label-sm text-[#58605B] uppercase tracking-wider px-2.5 mb-1.5 font-semibold flex items-center justify-between">

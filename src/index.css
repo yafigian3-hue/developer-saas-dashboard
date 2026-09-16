@@ -42,15 +42,32 @@
 }
 
 @layer base {
-  html, body {
+  html,
+  body,
+  #root {
     margin: 0;
     padding: 0;
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  html {
+    overflow-x: hidden;
+  }
+
+  body {
     background-color: #F7F7F5;
     color: #161A18;
     font-family: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    overflow-x: hidden;
+  }
+
+  #root {
+    min-height: 100vh;
+    overflow-x: hidden;
   }
 }
 
