@@ -1,0 +1,105 @@
+import type { LogEntry } from "../types/log";
+
+export const initialLogs: LogEntry[] = [
+  {
+    id: "log_109281",
+    timestamp: "2025-01-18 12:41:09.421 UTC",
+    level: "error",
+    service: "payments-worker",
+    requestId: "req_98b7f21a",
+    message: "PaymentTimeoutError: upstream service payments-worker timed out after 1800ms while waiting for response socket.",
+    details: {
+      clientIp: "198.51.100.42",
+      path: "/v1/checkout",
+      statusCode: 500,
+      durationMs: 1800,
+      host: "api.gateway.internal",
+    },
+  },
+  {
+    id: "log_109280",
+    timestamp: "2025-01-18 12:41:05.118 UTC",
+    level: "info",
+    service: "auth-gateway",
+    requestId: "req_31a0e88c",
+    message: "GET /v1/users returned 200 OK in 84ms. 20 records returned.",
+    details: {
+      clientIp: "203.0.113.19",
+      path: "/v1/users",
+      statusCode: 200,
+      durationMs: 84,
+    },
+  },
+  {
+    id: "log_109279",
+    timestamp: "2025-01-18 12:40:58.892 UTC",
+    level: "info",
+    service: "payments-worker",
+    requestId: "req_e47c19bb",
+    message: "POST /v1/payments created transaction tx_99214488b successfully in 210ms.",
+    details: {
+      clientIp: "198.51.100.88",
+      path: "/v1/payments",
+      statusCode: 201,
+      durationMs: 210,
+    },
+  },
+  {
+    id: "log_109278",
+    timestamp: "2025-01-18 12:40:42.003 UTC",
+    level: "info",
+    service: "core-api",
+    requestId: "req_77d2a13f",
+    message: "GET /v1/projects retrieved organization metadata for org_acme_prod.",
+    details: {
+      clientIp: "192.0.2.71",
+      path: "/v1/projects",
+      statusCode: 200,
+      durationMs: 65,
+    },
+  },
+  {
+    id: "log_109277",
+    timestamp: "2025-01-18 12:40:30.741 UTC",
+    level: "info",
+    service: "auth-gateway",
+    requestId: "req_55b89a02",
+    message: "DELETE /v1/api-keys revoked token key_sandbox_981a2.",
+    details: {
+      clientIp: "198.51.100.12",
+      path: "/v1/api-keys",
+      statusCode: 204,
+      durationMs: 115,
+    },
+  },
+  {
+    id: "log_109276",
+    timestamp: "2025-01-18 12:40:15.309 UTC",
+    level: "warn",
+    service: "rate-limiter",
+    requestId: "req_f812cd90",
+    message: "RateLimitExceeded: quota of 120 req/min exceeded for client IP 198.51.100.99. Returning 429 Too Many Requests.",
+    details: {
+      clientIp: "198.51.100.99",
+      path: "/v1/media/upload",
+      statusCode: 429,
+      durationMs: 421,
+    },
+  },
+  {
+    id: "log_109275",
+    timestamp: "2025-01-18 12:39:52.610 UTC",
+    level: "warn",
+    service: "auth-gateway",
+    requestId: "req_44d99e01",
+    message: "AuthenticationError: JWT signature expired at 12:39:00 UTC for /v1/auth/tokens.",
+    details: {
+      clientIp: "192.0.2.144",
+      path: "/v1/auth/tokens",
+      statusCode: 401,
+      durationMs: 92,
+    },
+  },
+];
+
+export const mockLogs = initialLogs;

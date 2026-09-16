@@ -1,0 +1,6 @@
+{
+  "name": "Developer SaaS Dashboard",
+  "description": "Monitor your API activity, gateway latency, and operational health with real-time telemetry, error tracking, and request inspection.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

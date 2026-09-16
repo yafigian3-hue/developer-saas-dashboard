@@ -1,0 +1,91 @@
+@import "@fontsource/inter/400.css";
+@import "@fontsource/inter/500.css";
+@import "@fontsource/inter/600.css";
+@import "@fontsource/jetbrains-mono/400.css";
+@import "@fontsource/jetbrains-mono/500.css";
+@import "@fontsource/jetbrains-mono/600.css";
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+
+  /* Primary Palette Tokens */
+  --color-canvas: #F7F7F5;
+  --color-surface: #FFFFFF;
+  --color-surface-muted: #F0F1EE;
+  --color-border-default: #D9DDD7;
+  --color-text-primary: #161A18;
+  --color-text-secondary: #68716B;
+  --color-accent: #3F6B5B;
+  --color-accent-soft: #E4ECE8;
+  --color-success: #3F765C;
+  --color-warning: #B47A2C;
+  --color-danger: #B84C45;
+
+  /* Compatibility with HTML token classes */
+  --color-primary: #265344;
+  --color-primary-container: #3F6B5B;
+  --color-on-primary: #FFFFFF;
+  --color-secondary: #58605B;
+  --color-secondary-container: #DCE5DD;
+  --color-surface-container-lowest: #FFFFFF;
+  --color-surface-container-low: #F1F4F1;
+  --color-surface-container: #ECEFEB;
+  --color-surface-container-high: #E6E9E5;
+  --color-surface-container-highest: #E0E3E0;
+  --color-outline-variant: #C0C8C3;
+  --color-on-surface: #181C1A;
+  --color-on-surface-variant: #414945;
+  --color-tertiary: #6B4100;
+  --color-tertiary-container: #8B5706;
+}
+
+@layer base {
+  html, body {
+    margin: 0;
+    padding: 0;
+    background-color: #F7F7F5;
+    color: #161A18;
+    font-family: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+/* Custom utility classes matching typography scale */
+.font-metric-display {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 28px;
+  line-height: 32px;
+  letter-spacing: -0.03em;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.font-code-inline {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 12px;
+  line-height: 16px;
+  font-variant-numeric: tabular-nums;
+}
+
+.font-label-md {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 12px;
+  line-height: 16px;
+  letter-spacing: -0.01em;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+
+.font-label-sm {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 11px;
+  line-height: 14px;
+  letter-spacing: 0em;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+
