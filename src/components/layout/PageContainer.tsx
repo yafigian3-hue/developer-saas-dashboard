@@ -12,7 +12,10 @@ export const PageContainer: React.FC<PageContainerProps> = ({
 }) => {
   return (
     <div
-      className={cn("w-full px-4 sm:px-6 py-6 max-w-[1600px] mx-auto space-y-6", className)}
+      className={cn(
+        "w-full min-w-0 max-w-[1600px] mx-auto px-4 py-6 sm:px-6 space-y-6",
+        className,
+      )}
       {...props}
     >
       {children}

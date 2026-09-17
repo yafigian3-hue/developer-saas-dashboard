@@ -97,6 +97,7 @@ export default function App() {
         setIsDrawerOpen(true);
       }}
       onOpenDocs={() => setIsDocsOpen(true)}
+      onExportReport={() => setIsExportOpen(true)}
       searchQuery={searchQuery}
       onSearchChange={setSearchQuery}
     >
@@ -150,10 +151,7 @@ export default function App() {
         onClose={() => setIsExportOpen(false)}
       />
 
-      <DocsModal
-        isOpen={isDocsOpen}
-        onClose={() => setIsDocsOpen(false)}
-      />
+      <DocsModal isOpen={isDocsOpen} onClose={() => setIsDocsOpen(false)} />
     </AppShell>
   );
 }

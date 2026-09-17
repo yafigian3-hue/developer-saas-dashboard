@@ -9,6 +9,7 @@ export interface AppShellProps {
   onOpenNewProject: () => void;
   onOpenDrawer?: () => void;
   onOpenDocs?: () => void;
+  onExportReport?: () => void;
   searchQuery: string;
   onSearchChange: (q: string) => void;
 }
@@ -20,6 +21,7 @@ export const AppShell: React.FC<AppShellProps> = ({
   onOpenNewProject,
   onOpenDrawer,
   onOpenDocs,
+  onExportReport,
   searchQuery,
   onSearchChange,
 }) => {
@@ -50,8 +52,9 @@ export const AppShell: React.FC<AppShellProps> = ({
       <div className="min-h-screen w-full min-w-0 lg:pl-64">
         <Topbar
           onOpenMobileSidebar={() => setMobileSidebarOpen(true)}
-          onOpenNewProject={onOpenNewProject}
           onOpenDrawer={onOpenDrawer}
+          onOpenSettings={() => onNavigate("settings")}
+          onExportReport={onExportReport}
           searchQuery={searchQuery}
           onSearchChange={onSearchChange}
         />
