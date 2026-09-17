@@ -1,249 +1,185 @@
-import React from "react";
+import type { FC } from "react";
 import {
   LayoutDashboard,
   Layers,
   ArrowLeftRight,
   Terminal,
   Settings,
-  Key,
-  LineChart,
-  FolderTree,
-  ChevronsUpDown,
   BookOpen,
   X,
   Radio,
+  type LucideIcon,
 } from "lucide-react";
 import { cn } from "../../lib/utils";
 
-export type NavPage = "overview" | "projects" | "requests" | "logs" | "settings";
+export type NavPage =
+  | "overview"
+  | "projects"
+  | "requests"
+  | "logs"
+  | "settings";
+
+interface SidebarNavItem {
+  id: NavPage;
+  label: string;
+  icon: LucideIcon;
+  live?: boolean;
+}
 
 export interface SidebarProps {
   currentPage: NavPage;
   onNavigate: (page: NavPage) => void;
   isOpenMobile?: boolean;
   onCloseMobile?: () => void;
-  onOpenNewProject?: () => void;
   onOpenDocs?: () => void;
 }
 
-export const Sidebar: React.FC<SidebarProps> = ({
+const navItems: SidebarNavItem[] = [
+  {
+    id: "overview",
+    label: "Overview",
+    icon: LayoutDashboard,
+  },
+  {
+    id: "projects",
+    label: "Projects",
+    icon: Layers,
+  },
+  {
+    id: "requests",
+    label: "Requests",
+    icon: ArrowLeftRight,
+    live: true,
+  },
+  {
+    id: "logs",
+    label: "Logs",
+    icon: Terminal,
+  },
+  {
+    id: "settings",
+    label: "Settings",
+    icon: Settings,
+  },
+];
+
+const SidebarNavButton: FC<{
+  item: SidebarNavItem;
+  isActive: boolean;
+  onClick: () => void;
+  onCloseMobile?: () => void;
+}> = ({ item, isActive, onClick, onCloseMobile }) => {
+  const Icon = item.icon;
+
+  return (
+    <button
+      type="button"
+      onClick={() => {
+        onClick();
+        onCloseMobile?.();
+      }}
+      aria-current={isActive ? "page" : undefined}
+      className={cn(
+        "flex h-9 w-full items-center justify-between rounded px-2.5 text-left text-[13px] transition-colors duration-150",
+        isActive
+          ? "bg-accent-soft text-accent font-medium"
+          : "text-text-secondary hover:bg-surface-muted hover:text-text-primary",
+      )}
+    >
+      <span className="flex min-w-0 items-center gap-2.5">
+        <Icon className="h-4 w-4 shrink-0" />
+        <span className="truncate">{item.label}</span>
+      </span>
+
+      {item.live && (
+        <span
+          className="h-1.5 w-1.5 shrink-0 rounded-full bg-success"
+          aria-label="Live"
+          title="Live"
+        />
+      )}
+    </button>
+  );
+};
+
+export const Sidebar: FC<SidebarProps> = ({
   currentPage,
   onNavigate,
-  isOpenMobile,
+  isOpenMobile = false,
   onCloseMobile,
   onOpenDocs,
 }) => {
-  const navItems: Array<{
-    id: NavPage;
-    label: string;
-    icon: React.ReactNode;
-    badge?: string;
-    badgeVariant?: "neutral" | "live";
-  }> = [
-    {
-      id: "overview",
-      label: "Overview",
-      icon: <LayoutDashboard className="w-[18px] h-[18px]" />,
-    },
-    {
-      id: "projects",
-      label: "Projects",
-      icon: <Layers className="w-[18px] h-[18px]" />,
-      badge: "12",
-      badgeVariant: "neutral",
-    },
-    {
-      id: "requests",
-      label: "Requests",
-      icon: <ArrowLeftRight className="w-[18px] h-[18px]" />,
-      badge: "Live",
-      badgeVariant: "live",
-    },
-    {
-      id: "logs",
-      label: "Logs",
-      icon: <Terminal className="w-[18px] h-[18px]" />,
-    },
-  ];
-
   return (
     <>
-      {/* Mobile Backdrop */}
       {isOpenMobile && (
         <div
-          className="fixed inset-0 bg-black/40 z-40 lg:hidden backdrop-blur-[1px]"
+          className="fixed inset-0 z-40 bg-black/30 lg:hidden"
           onClick={onCloseMobile}
           aria-hidden="true"
         />
       )}
 
-      {/* Sidebar Container */}
       <aside
         className={cn(
-          "fixed left-0 top-0 h-screen w-64 bg-white border-r border-[#D9DDD7] z-40 flex flex-col justify-between select-none transition-transform duration-300 ease-in-out",
+          "fixed inset-y-0 left-0 z-40 flex w-60 flex-col border-r border-border-default bg-surface transition-transform duration-200 ease-out",
           isOpenMobile ? "translate-x-0" : "-translate-x-full lg:translate-x-0",
         )}
       >
-        <div className="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain">
-          {/* Workspace Brand Header */}
-          <div className="h-14 px-4 flex items-center justify-between border-b border-[#D9DDD7]/80 shrink-0">
-            <div className="flex items-center gap-2.5">
-              <div className="w-7 h-7 rounded bg-[#265344] flex items-center justify-center text-white shadow-sm shrink-0">
-                <Radio className="w-4 h-4 text-[#BAEAD5]" />
-              </div>
-              <span className="font-semibold text-[16px] text-[#181C1A] tracking-tight">
-                Developer SaaS
-              </span>
+        {/* Brand */}
+        <div className="flex h-14 shrink-0 items-center justify-between border-b border-border-default px-4">
+          <div className="flex min-w-0 items-center gap-2.5">
+            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded bg-accent text-white">
+              <Radio className="h-4 w-4" />
             </div>
-            <div className="flex items-center gap-1">
-              <span className="font-label-sm text-[#414945] bg-[#ECEFEB] px-1.5 py-0.5 rounded border border-[#C0C8C3]/50">
-                v1.0
-              </span>
-              {/* Close button on mobile */}
-              <button
-                type="button"
-                onClick={onCloseMobile}
-                className="lg:hidden p-1 rounded hover:bg-[#F0F1EE] text-[#68716B]"
-                aria-label="Close menu"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
+
+            <span className="truncate text-[14px] font-semibold tracking-tight text-text-primary">
+              Developer SaaS
+            </span>
           </div>
-          {/* Project Selector Pill */}
-          <div className="p-3 border-b border-[#D9DDD7]/60 shrink-0">
-            <button
-              type="button"
-              onClick={() => onNavigate("projects")}
-              className="w-full flex items-center justify-between px-2.5 py-1.5 bg-[#F1F4F1] hover:bg-[#ECEFEB] border border-[#C0C8C3]/50 rounded-lg text-left transition-colors"
-            >
-              <div className="flex items-center gap-2 overflow-hidden">
-                <FolderTree className="w-4 h-4 text-[#58605B] shrink-0" />
-                <span className="text-[12px] text-[#181C1A] font-medium truncate">
-                  All Projects
-                </span>
-                <span className="font-label-sm bg-[#E6E9E5] text-[#414945] px-1.5 py-0.5 rounded-full">
-                  12
-                </span>
-              </div>
-              <ChevronsUpDown className="w-4 h-4 text-[#58605B] shrink-0" />
-            </button>
-          </div>
-          {/* Section: Overview Navigation */}
-          <div className="px-3 py-3">
-            <div className="font-label-sm text-[#58605B] uppercase tracking-wider px-2.5 mb-1.5 font-semibold">
-              Overview
-            </div>
-            <nav className="space-y-0.5">
-              {navItems.map((item) => {
-                const isActive = currentPage === item.id;
-                return (
-                  <button
-                    key={item.id}
-                    type="button"
-                    onClick={() => {
-                      onNavigate(item.id);
-                      if (onCloseMobile) onCloseMobile();
-                    }}
-                    className={cn(
-                      "w-full flex items-center justify-between px-2.5 py-1.5 rounded transition-colors text-left",
-                      isActive
-                        ? "bg-[#DCE5DD] text-[#265344] font-medium border-l-2 border-[#265344] pl-2"
-                        : "text-[#414945] hover:bg-[#E6E9E5] hover:text-[#181C1A]",
-                    )}
-                  >
-                    <div className="flex items-center gap-2">
-                      {item.icon}
-                      <span className="text-[12px]">{item.label}</span>
-                    </div>
-                    {item.badge && (
-                      <span
-                        className={cn(
-                          "font-label-sm px-1.5 py-0.5 rounded",
-                          item.badgeVariant === "live"
-                            ? "bg-[#3F6B5B]/20 text-[#265344] border border-[#265344]/30 font-medium"
-                            : "bg-[#ECEFEB] text-[#414945]",
-                        )}
-                      >
-                        {item.badge}
-                      </span>
-                    )}
-                  </button>
-                );
-              })}
-            </nav>
-          </div>
-          {/* Section: Configuration */}
-          <div className="px-3 py-1.5">
-            <div className="font-label-sm text-[#58605B] uppercase tracking-wider px-2.5 mb-1.5 font-semibold">
-              Configuration
-            </div>
-            <nav className="space-y-0.5">
-              <button
-                type="button"
-                onClick={() => {
-                  onNavigate("settings");
-                  if (onCloseMobile) onCloseMobile();
-                }}
-                className={cn(
-                  "w-full flex items-center justify-between px-2.5 py-1.5 rounded transition-colors text-left",
-                  currentPage === "settings"
-                    ? "bg-[#DCE5DD] text-[#265344] font-medium border-l-2 border-[#265344] pl-2"
-                    : "text-[#414945] hover:bg-[#E6E9E5] hover:text-[#181C1A]",
-                )}
-              >
-                <div className="flex items-center gap-2">
-                  <Settings className="w-[18px] h-[18px]" />
-                  <span className="text-[12px]">Settings</span>
-                </div>
-              </button>
-            </nav>
-          </div>
-          {/* Section: Backlog */}
-          <div className="px-3 py-1.5 opacity-60">
-            <div className="font-label-sm text-[#58605B] uppercase tracking-wider px-2.5 mb-1.5 font-semibold flex items-center justify-between">
-              <span>Backlog</span>
-              <span className="font-label-sm bg-[#ECEFEB] text-[#58605B] px-1 rounded">
-                Soon
-              </span>
-            </div>
-            <div className="space-y-0.5">
-              <div className="flex items-center gap-2 px-2.5 py-1.5 text-[#58605B] cursor-not-allowed">
-                <Key className="w-[18px] h-[18px]" />
-                <span className="text-[12px]">API Keys</span>
-              </div>
-              <div className="flex items-center gap-2 px-2.5 py-1.5 text-[#58605B] cursor-not-allowed">
-                <LineChart className="w-[18px] h-[18px]" />
-                <span className="text-[12px]">Analytics</span>
-              </div>
-            </div>
-          </div>
+
+          <button
+            type="button"
+            onClick={onCloseMobile}
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded text-text-secondary transition-colors duration-150 hover:bg-surface-muted hover:text-text-primary focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent lg:hidden"
+            aria-label="Close navigation menu"
+          >
+            <X className="h-4 w-4" />
+          </button>
         </div>
 
-        {/* Sidebar Bottom Status & Docs */}
-        <div className="p-3 border-t border-[#D9DDD7]/80 space-y-2 bg-white shrink-0">
-          <div className="flex items-center justify-between px-2 py-1 bg-[#F1F4F1] rounded border border-[#D9DDD7]/60">
-            <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-[#265344] animate-pulse" />
-              <span className="font-label-sm text-[#181C1A] font-medium">
-                Systems Normal
-              </span>
-            </div>
-            <span className="font-label-sm text-[#58605B]">99.98%</span>
+        {/* Primary Navigation */}
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-2.5 py-3">
+          <nav aria-label="Primary navigation" className="space-y-0.5">
+            {navItems.map((item) => (
+              <SidebarNavButton
+                key={item.id}
+                item={item}
+                isActive={currentPage === item.id}
+                onClick={() => onNavigate(item.id)}
+                onCloseMobile={onCloseMobile}
+              />
+            ))}
+          </nav>
+        </div>
+
+        {/* Footer Utilities */}
+        <div className="shrink-0 border-t border-border-default px-2.5 py-3">
+          <div className="space-y-0.5">
+            {onOpenDocs && (
+              <button
+                type="button"
+                onClick={onOpenDocs}
+                className="flex h-9 w-full items-center gap-2.5 rounded px-2.5 text-left text-[13px] text-text-secondary transition-colors duration-150 hover:bg-surface-muted hover:text-text-primary focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent"
+              >
+                <BookOpen className="h-4 w-4 shrink-0" />
+                <span>Documentation</span>
+              </button>
+            )}
           </div>
 
-          <div className="flex items-center justify-between px-2 pt-1">
-            <button
-              type="button"
-              onClick={onOpenDocs}
-              className="flex items-center gap-1.5 text-[12px] text-[#58605B] hover:text-[#181C1A] transition-colors"
-            >
-              <BookOpen className="w-[15px] h-[15px]" />
-              <span>Documentation</span>
-            </button>
-            <span className="font-label-sm bg-[#ECEFEB] text-[#58605B] px-1.5 py-0.5 rounded border border-[#D9DDD7]/60">
-              Cmd+K
-            </span>
+          <div className="mt-2 flex items-center gap-2 px-2.5 py-1.5 text-[12px] text-text-secondary">
+            <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-success" />
+            <span>Systems normal</span>
           </div>
         </div>
       </aside>

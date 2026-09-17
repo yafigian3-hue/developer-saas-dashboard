@@ -2,11 +2,11 @@ import { useEffect, useRef } from "react";
 import type { FC } from "react";
 import {
   Bell,
+  Download,
   Menu,
+  PanelRightOpen,
   Search,
   Settings,
-  Share2,
-  SlidersHorizontal,
 } from "lucide-react";
 
 export interface TopbarProps {
@@ -44,49 +44,48 @@ export const Topbar: FC<TopbarProps> = ({
     };
 
     window.addEventListener("keydown", handleKeyDown);
-
-    return () => {
-      window.removeEventListener("keydown", handleKeyDown);
-    };
+    return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
+  const hasContextualActions = Boolean(onOpenDrawer || onExportReport);
+
   return (
-    <header className="fixed inset-x-0 top-0 z-30 flex h-14 items-center border-b border-border-default bg-surface px-4 sm:px-6 lg:left-64">
-      <div className="flex min-w-0 flex-1 items-center gap-2.5">
-        <button
-          type="button"
-          onClick={onOpenMobileSidebar}
-          aria-label="Open navigation menu"
-          className="flex h-8 w-8 shrink-0 items-center justify-center rounded border border-border-default text-text-secondary transition-colors duration-150 hover:bg-surface-muted hover:text-text-primary focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent lg:hidden"
-        >
-          <Menu className="h-4 w-4" />
-        </button>
+    <header className="fixed inset-x-0 top-0 z-30 flex h-14 items-center gap-3 border-b border-border-default bg-surface px-4 sm:px-6 lg:left-60">
+      <button
+        type="button"
+        onClick={onOpenMobileSidebar}
+        aria-label="Open navigation menu"
+        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-border-default text-text-secondary transition-colors duration-150 hover:bg-surface-muted hover:text-text-primary focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent lg:hidden"
+      >
+        <Menu className="h-4 w-4" />
+      </button>
 
-        <div className="relative min-w-0 w-full max-w-2xl">
-          <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-text-secondary" />
-
-          <input
-            ref={searchInputRef}
-            type="text"
-            value={searchQuery}
-            onChange={(event) => onSearchChange(event.target.value)}
-            placeholder="Search endpoints, request IDs, IPs, or logs..."
-            aria-label="Search dashboard"
-            className="h-8 w-full rounded border border-border-default bg-surface-muted pl-9 pr-9 text-xs text-text-primary placeholder:text-text-secondary transition-colors duration-150 focus:border-accent focus:bg-surface focus:outline-none focus:ring-1 focus:ring-accent"
-          />
-        </div>
+      <div className="relative min-w-0 max-w-2xl flex-1">
+        <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-text-secondary" />
+        <input
+          ref={searchInputRef}
+          type="text"
+          value={searchQuery}
+          onChange={(event) => onSearchChange(event.target.value)}
+          placeholder="Search endpoints, request IDs, IPs, or logs..."
+          aria-label="Search dashboard"
+          className="h-8 w-full rounded-md border border-border-default bg-surface-muted pl-9 pr-9 text-xs text-text-primary placeholder:text-text-secondary transition-colors duration-150 focus:border-accent focus:bg-surface focus:outline-none focus:ring-1 focus:ring-accent"
+        />
+        <kbd className="pointer-events-none absolute right-2 top-1/2 hidden -translate-y-1/2 rounded border border-border-default bg-surface px-1.5 py-0.5 font-mono text-[10px] leading-none text-text-secondary sm:block">
+          /
+        </kbd>
       </div>
 
-      <div className="ml-3 flex shrink-0 items-center gap-1">
+      <div className="ml-auto flex shrink-0 items-center gap-0.5">
         {onOpenDrawer && (
           <button
             type="button"
             onClick={onOpenDrawer}
             aria-label="Open inspect drawer"
             title="Open inspect drawer"
-            className="flex h-8 w-8 items-center justify-center rounded text-text-secondary transition-colors duration-150 hover:bg-surface-muted hover:text-text-primary focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent"
+            className="flex h-8 w-8 items-center justify-center rounded-md text-text-secondary transition-colors duration-150 hover:bg-surface-muted hover:text-text-primary focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent"
           >
-            <SlidersHorizontal className="h-4 w-4" />
+            <PanelRightOpen className="h-4 w-4" />
           </button>
         )}
 
@@ -96,17 +95,22 @@ export const Topbar: FC<TopbarProps> = ({
             onClick={onExportReport}
             aria-label="Export report"
             title="Export report"
-            className="flex h-8 w-8 items-center justify-center rounded text-text-secondary transition-colors duration-150 hover:bg-surface-muted hover:text-text-primary focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent"
+            className="flex h-8 w-8 items-center justify-center rounded-md text-text-secondary transition-colors duration-150 hover:bg-surface-muted hover:text-text-primary focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent"
           >
-            <Share2 className="h-4 w-4" />
+            <Download className="h-4 w-4" />
           </button>
         )}
 
+        {hasContextualActions && (
+          <div className="mx-1 h-4 w-px bg-border-default" aria-hidden="true" />
+        )}
+
+        {/* Global actions — always available regardless of page */}
         <button
           type="button"
           aria-label="Notifications"
           title="Notifications"
-          className="relative flex h-8 w-8 items-center justify-center rounded text-text-secondary transition-colors duration-150 hover:bg-surface-muted hover:text-text-primary focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent"
+          className="relative flex h-8 w-8 items-center justify-center rounded-md text-text-secondary transition-colors duration-150 hover:bg-surface-muted hover:text-text-primary focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent"
         >
           <Bell className="h-4 w-4" />
           <span
@@ -121,7 +125,7 @@ export const Topbar: FC<TopbarProps> = ({
             onClick={onOpenSettings}
             aria-label="Open settings"
             title="Settings"
-            className="flex h-8 w-8 items-center justify-center rounded text-text-secondary transition-colors duration-150 hover:bg-surface-muted hover:text-text-primary focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent"
+            className="flex h-8 w-8 items-center justify-center rounded-md text-text-secondary transition-colors duration-150 hover:bg-surface-muted hover:text-text-primary focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent"
           >
             <Settings className="h-4 w-4" />
           </button>

@@ -1,6 +1,7 @@
 import React, { useEffect } from "react";
 import { X } from "lucide-react";
 import { cn } from "../../lib/utils";
+import { useLockBodyScroll } from "../../lib/useLockBodyScroll";
 
 export interface ModalProps {
   isOpen: boolean;
@@ -21,18 +22,16 @@ export const Modal: React.FC<ModalProps> = ({
   footer,
   maxWidth = "md",
 }) => {
+  useLockBodyScroll(isOpen);
+
   useEffect(() => {
+    if (!isOpen) return;
+
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
     };
-    if (isOpen) {
-      document.body.style.overflow = "hidden";
-      window.addEventListener("keydown", handleKeyDown);
-    }
-    return () => {
-      document.body.style.overflow = "unset";
-      window.removeEventListener("keydown", handleKeyDown);
-    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isOpen, onClose]);
 
   if (!isOpen) return null;
@@ -59,12 +58,14 @@ export const Modal: React.FC<ModalProps> = ({
         aria-modal="true"
         className={cn(
           "relative w-full bg-white rounded-lg border border-[#D9DDD7] shadow-xl z-10 flex flex-col max-h-[90vh] overflow-hidden animate-in fade-in zoom-in-95 duration-200",
-          maxWidthStyles[maxWidth]
+          maxWidthStyles[maxWidth],
         )}
       >
         <div className="p-4 border-b border-[#D9DDD7]/80 flex items-center justify-between shrink-0">
           <div>
-            <h3 className="font-semibold text-[16px] text-[#181C1A]">{title}</h3>
+            <h3 className="font-semibold text-[16px] text-[#181C1A]">
+              {title}
+            </h3>
             {description && (
               <p className="text-[12px] text-[#68716B] mt-0.5">{description}</p>
             )}
