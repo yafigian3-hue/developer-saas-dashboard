@@ -17,7 +17,6 @@ export interface OverviewPageProps {
   isDrawerOpen: boolean;
   onCloseDrawer: () => void;
   onViewLogs: (reqId: string) => void;
-  onExportReport: () => void;
 }
 
 export const OverviewPage: React.FC<OverviewPageProps> = ({
@@ -27,7 +26,6 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({
   isDrawerOpen,
   onCloseDrawer,
   onViewLogs,
-  onExportReport,
 }) => {
   const [dateRange, setDateRange] = useState<string>("30d");
   const [environment, setEnvironment] = useState<string>("prod-cluster-01");
@@ -46,7 +44,6 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({
 
   return (
     <PageContainer>
-      {/* 1. Page Header (Single Shared Baseline) */}
       <PageHeader
         dateRange={dateRange}
         onDateRangeChange={setDateRange}
@@ -54,12 +51,9 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({
         onEnvironmentChange={setEnvironment}
         isLiveSyncing={isLiveSyncing}
         onToggleLiveSync={handleToggleLiveSync}
-        onExportReport={onExportReport}
       />
 
-      {/* 2. KPI Row: 12-Column Grid (4 Equal Cards: 3 cols each) */}
       <div className="grid grid-cols-12 gap-6">
-        {/* KPI 1: Requests */}
         <div className="col-span-12 sm:col-span-6 lg:col-span-3 min-w-0">
           <MetricCard
             title="Total Requests"

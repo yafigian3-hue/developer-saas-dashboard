@@ -91,7 +91,6 @@ export default function App() {
         if (page !== "logs") setLogFilter("");
         if (page !== "requests") setRequestFilter("");
       }}
-      onOpenNewProject={() => setIsNewProjectOpen(true)}
       onOpenDrawer={() => {
         if (!selectedRequest) setSelectedRequest(requests[0]);
         setIsDrawerOpen(true);
@@ -109,7 +108,6 @@ export default function App() {
           isDrawerOpen={isDrawerOpen}
           onCloseDrawer={() => setIsDrawerOpen(false)}
           onViewLogs={handleViewLogsForRequest}
-          onExportReport={() => setIsExportOpen(true)}
         />
       )}
 

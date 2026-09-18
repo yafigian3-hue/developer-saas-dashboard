@@ -16,7 +16,6 @@ export interface PageHeaderProps {
   onEnvironmentChange: (env: string) => void;
   isLiveSyncing: boolean;
   onToggleLiveSync: () => void;
-  onExportReport: () => void;
 }
 
 export const PageHeader: React.FC<PageHeaderProps> = ({
@@ -26,7 +25,6 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
   onEnvironmentChange,
   isLiveSyncing,
   onToggleLiveSync,
-  onExportReport,
 }) => {
   const [dateMenuOpen, setDateMenuOpen] = useState(false);
   const [envMenuOpen, setEnvMenuOpen] = useState(false);
@@ -188,16 +186,6 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
             )}
           />
           <span>{isLiveSyncing ? "Syncing..." : "Live Sync"}</span>
-        </button>
-
-        {/* Export Report Button */}
-        <button
-          type="button"
-          onClick={onExportReport}
-          className="flex items-center gap-1.5 bg-white hover:bg-[#ECEFEB] px-3 py-1.5 rounded-lg border border-[#D9DDD7] shadow-sm text-[#181C1A] transition-colors text-[12px] font-medium"
-        >
-          <Share2 className="w-4 h-4 text-[#58605B]" />
-          <span>Export Report</span>
         </button>
       </div>
     </div>

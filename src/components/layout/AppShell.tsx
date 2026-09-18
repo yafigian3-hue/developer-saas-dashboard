@@ -1,12 +1,12 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { Sidebar, type NavPage } from "./Sidebar";
 import { Topbar } from "./Topbar";
+import { useLockBodyScroll } from "../../lib/useLockBodyScroll";
 
 export interface AppShellProps {
   currentPage: NavPage;
   onNavigate: (page: NavPage) => void;
   children: React.ReactNode;
-  onOpenNewProject: () => void;
   onOpenDrawer?: () => void;
   onOpenDocs?: () => void;
   onExportReport?: () => void;
@@ -18,7 +18,6 @@ export const AppShell: React.FC<AppShellProps> = ({
   currentPage,
   onNavigate,
   children,
-  onOpenNewProject,
   onOpenDrawer,
   onOpenDocs,
   onExportReport,
@@ -27,17 +26,7 @@ export const AppShell: React.FC<AppShellProps> = ({
 }) => {
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
-  useEffect(() => {
-    const lockScroll = mobileSidebarOpen && window.innerWidth < 1024;
-
-    document.documentElement.style.overflow = lockScroll ? "hidden" : "";
-    document.body.style.overflow = lockScroll ? "hidden" : "";
-
-    return () => {
-      document.documentElement.style.overflow = "";
-      document.body.style.overflow = "";
-    };
-  }, [mobileSidebarOpen]);
+  useLockBodyScroll(mobileSidebarOpen);
 
   return (
     <div className="min-h-screen w-full overflow-x-hidden bg-canvas text-text-primary antialiased">
@@ -49,7 +38,7 @@ export const AppShell: React.FC<AppShellProps> = ({
         onOpenDocs={onOpenDocs}
       />
 
-      <div className="min-h-screen w-full min-w-0 lg:pl-64">
+      <div className="min-h-screen w-full min-w-0 lg:pl-60">
         <Topbar
           onOpenMobileSidebar={() => setMobileSidebarOpen(true)}
           onOpenDrawer={onOpenDrawer}
