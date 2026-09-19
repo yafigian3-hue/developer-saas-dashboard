@@ -1,53 +1,89 @@
 import React from "react";
 import { Gauge } from "lucide-react";
 
+interface DistributionItem {
+  label: string;
+  percentage: number;
+  tone: "success" | "warning" | "danger";
+}
+
+const distribution: DistributionItem[] = [
+  { label: "< 100ms", percentage: 74, tone: "success" },
+  { label: "100–300ms", percentage: 21, tone: "warning" },
+  { label: "> 300ms", percentage: 5, tone: "danger" },
+];
+
+const toneStyles = {
+  success: {
+    bar: "bg-success",
+    text: "text-success",
+  },
+  warning: {
+    bar: "bg-warning",
+    text: "text-warning",
+  },
+  danger: {
+    bar: "bg-danger",
+    text: "text-danger",
+  },
+} as const;
+
 export const LatencyDistribution: React.FC = () => {
   return (
-    <div className="bg-white rounded-lg border border-[#D9DDD7] shadow-sm p-5">
-      <div className="flex items-center justify-between mb-3.5">
-        <div>
-          <h2 className="text-[16px] text-[#181C1A] font-semibold tracking-tight">
+    <section className="min-w-0 rounded-lg border border-border-default bg-surface p-4 sm:p-5">
+      {/* Header */}
+      <div className="mb-4 flex min-w-0 items-start justify-between gap-3">
+        <div className="min-w-0">
+          <h2 className="truncate text-[16px] font-semibold tracking-tight text-text-primary">
             Latency Distribution
           </h2>
-          <div className="font-label-sm text-[#68716B]">Global response times</div>
-        </div>
-        <Gauge className="w-[18px] h-[18px] text-[#58605B]" />
-      </div>
 
-      {/* Progress segmented bar */}
-      <div className="w-full h-3 rounded-full bg-[#ECEFEB] flex overflow-hidden p-0.5 gap-0.5 mb-3">
-        <div
-          className="bg-[#3F765C] h-full rounded-l-full transition-all duration-500"
-          style={{ width: "74%" }}
-          title="< 100ms (74%)"
-        />
-        <div
-          className="bg-[#B47A2C] h-full transition-all duration-500"
-          style={{ width: "21%" }}
-          title="100-300ms (21%)"
-        />
-        <div
-          className="bg-[#B84C45] h-full rounded-r-full transition-all duration-500"
-          style={{ width: "5%" }}
-          title="> 300ms (5%)"
+          <p className="mt-0.5 font-label-sm text-text-secondary">
+            Global response times
+          </p>
+        </div>
+
+        <Gauge
+          className="h-4 w-4 shrink-0 text-text-secondary"
+          aria-hidden="true"
         />
       </div>
 
-      {/* 3 Metric Buckets */}
-      <div className="grid grid-cols-3 gap-2 pt-1 text-center font-label-sm">
-        <div className="p-2 rounded bg-[#F1F4F1] border border-[#D9DDD7]/60">
-          <span className="text-[#68716B] block">&lt; 100ms</span>
-          <span className="font-semibold text-[#3F765C]">74%</span>
-        </div>
-        <div className="p-2 rounded bg-[#F1F4F1] border border-[#D9DDD7]/60">
-          <span className="text-[#68716B] block">100-300ms</span>
-          <span className="font-semibold text-[#B47A2C]">21%</span>
-        </div>
-        <div className="p-2 rounded bg-[#F1F4F1] border border-[#D9DDD7]/60">
-          <span className="text-[#68716B] block">&gt; 300ms</span>
-          <span className="font-semibold text-[#B84C45]">5%</span>
+      {/* Distribution Bar */}
+      <div
+        role="img"
+        aria-label="Latency distribution: 74 percent under 100 milliseconds, 21 percent between 100 and 300 milliseconds, 5 percent above 300 milliseconds"
+      >
+        <div className="grid h-3 w-full grid-cols-[74fr_21fr_5fr] overflow-hidden rounded-sm bg-surface-muted">
+          {distribution.map((item) => (
+            <div
+              key={item.label}
+              className={toneStyles[item.tone].bar}
+              style={{ minWidth: item.percentage > 0 ? "3px" : undefined }}
+            />
+          ))}
         </div>
       </div>
-    </div>
+
+      {/* Distribution Metrics */}
+      <div className="mt-3 grid grid-cols-3 gap-2">
+        {distribution.map((item) => (
+          <div
+            key={item.label}
+            className="min-w-0 rounded border border-border-default bg-surface-muted px-2 py-2.5 text-center"
+          >
+            <span className="block truncate font-label-sm text-text-secondary">
+              {item.label}
+            </span>
+
+            <span
+              className={`mt-0.5 block font-label-md font-semibold ${toneStyles[item.tone].text}`}
+            >
+              {item.percentage}%
+            </span>
+          </div>
+        ))}
+      </div>
+    </section>
   );
 };
