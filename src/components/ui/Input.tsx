@@ -8,31 +8,42 @@ export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> 
 
 export const Input = React.forwardRef<HTMLInputElement, InputProps>(
   ({ className, icon, rightElement, ...props }, ref) => {
+    const isInvalid =
+      props["aria-invalid"] === true || props["aria-invalid"] === "true";
+
     return (
-      <div className="relative flex items-center w-full">
+      <div className="relative flex w-full min-w-0 items-center">
         {icon && (
-          <div className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[#68716B] pointer-events-none flex items-center justify-center">
+          <div className="pointer-events-none absolute left-2.5 top-1/2 flex -translate-y-1/2 items-center justify-center text-text-secondary">
             {icon}
           </div>
         )}
+
         <input
           ref={ref}
           className={cn(
-            "w-full h-8 bg-[#F1F4F1] border border-[#C0C8C3]/50 rounded-lg text-[12px] leading-4 text-[#181C1A] placeholder:text-[#68716B] focus:outline-none focus:border-[#3F6B5B] focus:bg-white transition-all",
+            "h-8 w-full min-w-0 rounded border bg-surface-muted text-[12px] leading-4 text-text-primary placeholder:text-text-secondary transition-colors duration-150",
+            "border-border-default",
+            "hover:border-text-secondary",
+            "focus:border-accent focus:bg-surface focus:outline-none focus:ring-1 focus:ring-accent/30",
+            "disabled:cursor-not-allowed disabled:opacity-50",
+            isInvalid &&
+              "border-danger focus:border-danger focus:ring-danger/20",
             icon ? "pl-9" : "pl-3",
-            rightElement ? "pr-8" : "pr-3",
-            className
+            rightElement ? "pr-9" : "pr-3",
+            className,
           )}
           {...props}
         />
+
         {rightElement && (
-          <div className="absolute right-2 top-1/2 -translate-y-1/2 text-[#68716B] flex items-center">
+          <div className="absolute right-2.5 top-1/2 flex -translate-y-1/2 items-center text-text-secondary">
             {rightElement}
           </div>
         )}
       </div>
     );
-  }
+  },
 );
 
 Input.displayName = "Input";
