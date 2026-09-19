@@ -23,60 +23,69 @@ export const Pagination: React.FC<PaginationProps> = ({
   className,
   itemLabel = "requests",
 }) => {
+  const isPreviousDisabled = currentPage <= 1;
+  const isNextDisabled = currentPage >= totalPages || totalPages <= 0;
+
+  const displayStart = totalItems > 0 ? startIndex : 0;
+  const displayEnd = totalItems > 0 ? endIndex : 0;
+
   return (
-    <div
+    <nav
+      aria-label="Pagination"
       className={cn(
-        "p-3.5 border-t border-[#D9DDD7]/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-[#68716B] font-label-sm bg-white",
-        className
+        "flex flex-col gap-2.5 border-t border-border-default bg-surface px-4 py-3 font-label-sm text-text-secondary sm:flex-row sm:items-center sm:justify-between sm:px-5",
+        className,
       )}
     >
-      <div>
+      <div className="min-w-0">
         Showing{" "}
-        <span className="font-medium text-[#181C1A]">
-          {startIndex} - {endIndex}
+        <span className="font-medium text-text-primary">
+          {displayStart} - {displayEnd}
         </span>{" "}
         of{" "}
-        <span className="font-medium text-[#181C1A]">
+        <span className="font-medium text-text-primary">
           {totalItems.toLocaleString()}
         </span>{" "}
         {itemLabel}
       </div>
 
-      <div className="flex items-center gap-2 self-end sm:self-auto">
-        <span>
-          Page {currentPage.toLocaleString()} of {totalPages.toLocaleString()}
+      <div className="flex items-center justify-between gap-3 sm:justify-end">
+        <span className="whitespace-nowrap">
+          Page {currentPage} of {Math.max(totalPages, 1)}
         </span>
-        <div className="inline-flex gap-1">
+
+        <div className="flex items-center gap-1">
           <button
             type="button"
             aria-label="Previous page"
-            disabled={currentPage <= 1}
+            disabled={isPreviousDisabled}
             onClick={() => onPageChange(currentPage - 1)}
             className={cn(
-              "p-1 rounded border border-[#D9DDD7] transition-colors",
-              currentPage <= 1
-                ? "text-[#68716B] opacity-40 cursor-not-allowed"
-                : "text-[#181C1A] hover:bg-[#F0F1EE]"
+              "flex h-8 w-8 items-center justify-center rounded border border-border-default text-text-secondary transition-colors duration-150",
+              "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent",
+              "hover:bg-surface-muted hover:text-text-primary",
+              "disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-text-secondary",
             )}
           >
-            <ChevronLeft className="w-3.5 h-3.5" />
+            <ChevronLeft className="h-3.5 w-3.5" />
           </button>
+
           <button
             type="button"
             aria-label="Next page"
-            disabled={currentPage >= totalPages}
+            disabled={isNextDisabled}
             onClick={() => onPageChange(currentPage + 1)}
             className={cn(
-              "p-1 rounded border border-[#D9DDD7] transition-colors",
-              currentPage >= totalPages
-                ? "text-[#68716B] opacity-40 cursor-not-allowed"
-                : "text-[#181C1A] hover:bg-[#F0F1EE]"
+              "flex h-8 w-8 items-center justify-center rounded border border-border-default text-text-secondary transition-colors duration-150",
+              "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent",
+              "hover:bg-surface-muted hover:text-text-primary",
+              "disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-text-secondary",
             )}
           >
-            <ChevronRight className="w-3.5 h-3.5" />
+            <ChevronRight className="h-3.5 w-3.5" />
           </button>
         </div>
       </div>
-    </div>
+    </nav>
   );
 };
