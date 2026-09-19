@@ -35,11 +35,12 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({
     setIsLiveSyncing((prev) => !prev);
   };
 
-  const handleInspectTraceFromErrors = () => {
-    // Select the checkout 500 error request
-    const checkoutReq =
-      requests.find((r) => r.endpoint.includes("checkout")) || requests[0];
-    onSelectRequest(checkoutReq);
+  const handleInspectTraceFromErrors = (endpointPath?: string) => {
+    const matchedRequest = endpointPath
+      ? requests.find((r) => r.endpoint === endpointPath)
+      : undefined;
+
+    onSelectRequest(matchedRequest ?? requests[0]);
   };
 
   return (
@@ -53,8 +54,8 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({
         onToggleLiveSync={handleToggleLiveSync}
       />
 
-      <div className="grid grid-cols-12 gap-6">
-        <div className="col-span-12 sm:col-span-6 lg:col-span-3 min-w-0">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4 lg:gap-6">
+        <div className="min-w-0">
           <MetricCard
             title="Total Requests"
             badgeText="+12.4%"
@@ -65,53 +66,53 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({
           />
         </div>
 
-        {/* KPI 2: Error Rate */}
-        <div className="col-span-12 sm:col-span-6 lg:col-span-3 min-w-0">
+       
+        <div className="min-w-0">
           <MetricCard
             title="Error Rate"
             badgeText="-8.1%"
             badgeType="positive"
+            trend="down"
             value="0.42%"
             subtitle="SLA Target: < 1.00%"
             chartType="sparkline-down"
           />
         </div>
 
-        {/* KPI 3: Avg Latency */}
-        <div className="col-span-12 sm:col-span-6 lg:col-span-3 min-w-0">
+        <div className="min-w-0">
           <MetricCard
             title="Avg. Latency"
             badgeText="-4.3%"
             badgeType="positive"
+            trend="down"
             value={
               <>
                 142
-                <span className="text-[16px] text-[#58605B] ml-1 font-semibold">
+                <span className="ml-1 text-base font-medium text-text-secondary">
                   ms
                 </span>
               </>
             }
             subtitle={
-              <span className="flex items-center gap-1.5 flex-wrap">
+              <span className="flex flex-wrap items-center gap-1.5">
                 <span>p95: 230ms</span>
-                <span className="text-[#C0C8C3]">•</span>
-                <span className="text-[#8B5706] font-medium">p99: 412ms</span>
+                <span className="text-border-default">•</span>
+                <span className="font-medium text-warning">p99: 412ms</span>
               </span>
             }
             chartType="sparkline-latency"
           />
         </div>
 
-        {/* KPI 4: Active Projects */}
-        <div className="col-span-12 sm:col-span-6 lg:col-span-3 min-w-0">
+        <div className="min-w-0">
           <MetricCard
             title="Active Projects"
             badgeText="+2 this month"
             badgeType="neutral"
             value="12"
             subtitle={
-              <span className="text-[#3F765C] flex items-center gap-1">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#3F765C]" />
+              <span className="flex items-center gap-1 text-success">
+                <span className="h-1.5 w-1.5 rounded-full bg-success" />
                 12/12 passing health probes
               </span>
             }
@@ -120,23 +121,21 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({
         </div>
       </div>
 
-      {/* 3. Primary Analytics Row: 12-Column Grid (8 cols Chart + 4 cols Errors) */}
-      <div className="grid grid-cols-12 gap-6 items-stretch">
-        <div className="col-span-12 lg:col-span-8 min-w-0">
+      <div className="grid grid-cols-12 items-stretch gap-6">
+        <div className="col-span-12 min-w-0 lg:col-span-8">
           <RequestVolumeChart
             selectedRange={dateRange}
             onRangeChange={setDateRange}
           />
         </div>
 
-        <div className="col-span-12 lg:col-span-4 min-w-0">
+        <div className="col-span-12 min-w-0 lg:col-span-4">
           <ErrorsByEndpoint onInspectTrace={handleInspectTraceFromErrors} />
         </div>
       </div>
 
-      {/* 4. Secondary Analytics Row: 12-Column Grid (8 cols Table + 4 cols Latency & Health) */}
-      <div className="grid grid-cols-12 gap-6 items-stretch">
-        <div className="col-span-12 lg:col-span-8 min-w-0">
+      <div className="grid grid-cols-12 items-stretch gap-6">
+        <div className="col-span-12 min-w-0 lg:col-span-8">
           <RecentRequestsTable
             requests={requests}
             selectedRequestId={selectedRequest?.id}
@@ -144,13 +143,12 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({
           />
         </div>
 
-        <div className="col-span-12 lg:col-span-4 min-w-0 flex flex-col justify-between gap-6">
+        <div className="col-span-12 flex min-w-0 flex-col justify-between gap-6 lg:col-span-4">
           <LatencyDistribution />
           <GatewayHealth />
         </div>
       </div>
 
-      {/* 5. Request Details Slide-Over Overlay Drawer */}
       <RequestDetailDrawer
         isOpen={isDrawerOpen}
         onClose={onCloseDrawer}
