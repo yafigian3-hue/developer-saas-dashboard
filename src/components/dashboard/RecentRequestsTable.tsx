@@ -1,9 +1,10 @@
-import React, { useState, useMemo } from "react";
-import { Filter, ArrowRight } from "lucide-react";
+import React, { useMemo, useState } from "react";
+import { Filter } from "lucide-react";
 import type { ApiRequest } from "../../types/request";
 import { MethodBadge, StatusBadge } from "../shared/StatusBadge";
 import { Pagination } from "../ui/Pagination";
 import { cn } from "../../lib/utils";
+import { Input } from "../ui/Input";
 
 interface RecentRequestsTableProps {
   requests: ApiRequest[];
@@ -12,258 +13,331 @@ interface RecentRequestsTableProps {
   filterPathInitial?: string;
 }
 
+type StatusFilter = "all" | "2xx" | "4xx" | "5xx";
+
+const ITEMS_PER_PAGE = 6;
+
+const statusFilters: Array<{
+  id: StatusFilter;
+  label: string;
+}> = [
+  { id: "all", label: "All" },
+  { id: "2xx", label: "2xx OK" },
+  { id: "4xx", label: "4xx Warn" },
+  { id: "5xx", label: "5xx Err" },
+];
+
 export const RecentRequestsTable: React.FC<RecentRequestsTableProps> = ({
   requests,
   selectedRequestId,
   onSelectRequest,
   filterPathInitial = "",
 }) => {
-  const [activeFilter, setActiveFilter] = useState<"all" | "2xx" | "4xx" | "5xx">("all");
-  const [pathFilter, setPathFilter] = useState<string>(filterPathInitial);
-  const [currentPage, setCurrentPage] = useState<number>(1);
-  const itemsPerPage = 6;
+  const [activeFilter, setActiveFilter] = useState<StatusFilter>("all");
+  const [pathFilter, setPathFilter] = useState(filterPathInitial);
+  const [currentPage, setCurrentPage] = useState(1);
 
-  // Filter requests
   const filteredRequests = useMemo(() => {
-    return requests.filter((req) => {
-      // Category filter
-      if (activeFilter === "2xx" && req.statusCategory !== "2xx") return false;
-      if (activeFilter === "4xx" && req.statusCategory !== "4xx") return false;
-      if (activeFilter === "5xx" && req.statusCategory !== "5xx") return false;
+    const query = pathFilter.trim().toLowerCase();
 
-      // Path / query search
-      if (pathFilter.trim()) {
-        const query = pathFilter.toLowerCase();
-        const matchesPath = req.endpoint.toLowerCase().includes(query);
-        const matchesId = req.id.toLowerCase().includes(query);
-        const matchesProject = req.project.toLowerCase().includes(query);
-        return matchesPath || matchesId || matchesProject;
+    return requests.filter((request) => {
+      if (activeFilter !== "all" && request.statusCategory !== activeFilter) {
+        return false;
       }
 
-      return true;
+      if (!query) return true;
+
+      return (
+        request.endpoint.toLowerCase().includes(query) ||
+        request.id.toLowerCase().includes(query) ||
+        request.project.toLowerCase().includes(query)
+      );
     });
   }, [requests, activeFilter, pathFilter]);
 
-  const totalPages = Math.max(1, Math.ceil(filteredRequests.length / itemsPerPage));
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const paginatedRequests = filteredRequests.slice(startIndex, startIndex + itemsPerPage);
+  const totalPages = Math.max(
+    1,
+    Math.ceil(filteredRequests.length / ITEMS_PER_PAGE),
+  );
 
-  const displayTotal = 1842291; // Realistic simulated volume matching design
+  const safeCurrentPage = Math.min(currentPage, totalPages);
+  const startIndex = (safeCurrentPage - 1) * ITEMS_PER_PAGE;
+  const endIndex = Math.min(
+    startIndex + ITEMS_PER_PAGE,
+    filteredRequests.length,
+  );
+
+  const paginatedRequests = filteredRequests.slice(startIndex, endIndex);
+
+  const handleFilterChange = (filter: StatusFilter) => {
+    setActiveFilter(filter);
+    setCurrentPage(1);
+  };
+
+  const handlePathFilterChange = (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    setPathFilter(event.target.value);
+    setCurrentPage(1);
+  };
+
+  const handleRequestKeyDown = (
+    event: React.KeyboardEvent<HTMLElement>,
+    request: ApiRequest,
+  ) => {
+    if (event.key !== "Enter" && event.key !== " ") return;
+
+    event.preventDefault();
+    onSelectRequest(request);
+  };
 
   return (
-    <div className="bg-white rounded-lg border border-[#D9DDD7] shadow-sm overflow-hidden flex flex-col justify-between h-full">
-      <div>
-        {/* Table Header / Toolbar */}
-        <div className="p-5 border-b border-[#D9DDD7]/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white">
-          <div>
-            <div className="flex items-center gap-2">
-              <h2 className="text-[16px] text-[#181C1A] font-semibold tracking-tight">
-                Recent Requests
-              </h2>
-              <span className="w-2 h-2 rounded-full bg-[#265344] animate-ping" />
-            </div>
-            <p className="text-[12px] text-[#68716B] mt-0.5">
-              Live telemetry stream across active gateway instances
+    <section className="@container flex h-full min-w-0 flex-col overflow-hidden rounded-lg border border-border-default bg-surface">
+      {/* Header */}
+      <div className="border-b border-border-default bg-surface px-4 py-4 sm:px-5">
+        <div className="flex min-w-0 flex-col gap-3 @2xl:flex-row @2xl:items-center @2xl:justify-between">
+          <div className="min-w-0 @2xl:flex-1">
+            <h2 className="text-[16px] font-semibold tracking-tight text-text-primary">
+              Recent Requests
+            </h2>
+
+            <p className="mt-0.5 truncate text-[12px] text-text-secondary">
+              Latest API activity across your projects
             </p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2">
-            {/* Filter Pills */}
-            <div className="inline-flex rounded-lg bg-[#F1F4F1] p-0.5 border border-[#C0C8C3]/50 text-[#68716B] font-label-sm">
-              <button
-                type="button"
-                onClick={() => {
-                  setActiveFilter("all");
-                  setCurrentPage(1);
-                }}
-                className={cn(
-                  "px-2.5 py-1 rounded transition-colors",
-                  activeFilter === "all"
-                    ? "bg-white text-[#181C1A] font-medium shadow-sm"
-                    : "hover:text-[#181C1A]"
-                )}
-              >
-                All
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setActiveFilter("2xx");
-                  setCurrentPage(1);
-                }}
-                className={cn(
-                  "px-2.5 py-1 rounded transition-colors",
-                  activeFilter === "2xx"
-                    ? "bg-white text-[#181C1A] font-medium shadow-sm"
-                    : "hover:text-[#181C1A]"
-                )}
-              >
-                2xx OK
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setActiveFilter("4xx");
-                  setCurrentPage(1);
-                }}
-                className={cn(
-                  "px-2.5 py-1 rounded transition-colors",
-                  activeFilter === "4xx"
-                    ? "bg-white text-[#181C1A] font-medium shadow-sm"
-                    : "hover:text-[#181C1A]"
-                )}
-              >
-                4xx Warn
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setActiveFilter("5xx");
-                  setCurrentPage(1);
-                }}
-                className={cn(
-                  "px-2.5 py-1 rounded transition-colors",
-                  activeFilter === "5xx"
-                    ? "bg-white text-[#181C1A] font-medium shadow-sm"
-                    : "hover:text-[#181C1A]"
-                )}
-              >
-                5xx Err
-              </button>
+          {/* Controls */}
+          <div className="flex min-w-0 flex-col gap-2 @md:flex-row @md:items-center @2xl:shrink-0">
+            <div className="flex max-w-full items-center gap-0.5 overflow-x-auto rounded-md border border-border-default bg-surface-muted p-0.5">
+              {statusFilters.map((filter) => {
+                const isActive = activeFilter === filter.id;
+
+                return (
+                  <button
+                    key={filter.id}
+                    type="button"
+                    onClick={() => handleFilterChange(filter.id)}
+                    aria-pressed={isActive}
+                    className={cn(
+                      "shrink-0 rounded-sm px-2.5 py-1.5 font-label-sm transition-colors duration-150 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent",
+                      isActive
+                        ? "bg-surface font-semibold text-text-primary"
+                        : "text-text-secondary hover:text-text-primary",
+                    )}
+                  >
+                    {filter.label}
+                  </button>
+                );
+              })}
             </div>
 
-            {/* Filter input */}
-            <div className="relative">
-              <Filter className="w-3.5 h-3.5 text-[#68716B] absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-              <input
+            <div className="w-full @md:w-40 @2xl:w-44">
+              <Input
+                icon={<Filter className="h-3.5 w-3.5" />}
                 type="text"
                 value={pathFilter}
-                onChange={(e) => {
-                  setPathFilter(e.target.value);
-                  setCurrentPage(1);
-                }}
+                onChange={handlePathFilterChange}
                 placeholder="Filter path..."
-                className="h-7 w-32 md:w-44 pl-7 pr-2 font-code-inline text-[12px] bg-[#F1F4F1] border border-[#C0C8C3]/50 rounded focus:outline-none focus:border-[#265344] focus:bg-white transition-colors"
+                aria-label="Filter requests by path, ID, or project"
               />
             </div>
           </div>
         </div>
-
-        {/* Table Data */}
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse min-w-[680px]">
-            <thead>
-              <tr className="bg-[#F0F1EE] border-b border-[#D9DDD7] text-[#68716B] font-label-sm uppercase tracking-wider">
-                <th className="py-2.5 px-4 font-semibold">Time (UTC)</th>
-                <th className="py-2.5 px-3 font-semibold">Method</th>
-                <th className="py-2.5 px-3 font-semibold">Endpoint</th>
-                <th className="py-2.5 px-3 font-semibold">Status</th>
-                <th className="py-2.5 px-3 font-semibold text-right">Latency</th>
-                <th className="py-2.5 px-3 font-semibold">Project</th>
-                <th className="py-2.5 px-4 font-semibold text-right">Action</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-[#D9DDD7]/60 text-[12px]">
-              {paginatedRequests.map((req) => {
-                const isSelected = req.id === selectedRequestId;
-                const isError = req.status >= 500;
-                const isWarn = req.status >= 400 && req.status < 500;
-
-                return (
-                  <tr
-                    key={req.id}
-                    onClick={() => onSelectRequest(req)}
-                    className={cn(
-                      "transition-colors cursor-pointer",
-                      isSelected
-                        ? "bg-[#ECEFEB]/70 hover:bg-[#ECEFEB]"
-                        : "hover:bg-[#F7FAF6]"
-                    )}
-                  >
-                    <td className="py-2.5 px-4 font-code-inline text-[#181C1A] whitespace-nowrap">
-                      {req.time}
-                    </td>
-
-                    <td className="py-2.5 px-3">
-                      <MethodBadge method={req.method} />
-                    </td>
-
-                    <td className="py-2.5 px-3 font-code-inline text-[#181C1A] font-medium max-w-[200px] truncate">
-                      {req.endpoint}
-                    </td>
-
-                    <td className="py-2.5 px-3">
-                      <StatusBadge status={req.status} text={req.statusText} />
-                    </td>
-
-                    <td
-                      className={cn(
-                        "py-2.5 px-3 text-right font-code-inline whitespace-nowrap",
-                        isError
-                          ? "text-[#B84C45] font-semibold"
-                          : isWarn
-                          ? "text-[#B47A2C] font-medium"
-                          : "text-[#68716B]"
-                      )}
-                    >
-                      {req.latency.toLocaleString()}ms
-                    </td>
-
-                    <td className="py-2.5 px-3 text-[#68716B] whitespace-nowrap">
-                      {req.project}
-                    </td>
-
-                    <td className="py-2.5 px-4 text-right">
-                      {isSelected ? (
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onSelectRequest(req);
-                          }}
-                          className="font-label-sm px-2 py-1 rounded bg-[#265344] text-white font-medium shadow-sm inline-flex items-center gap-1 ml-auto hover:bg-[#1f4538] transition-colors"
-                        >
-                          <span>Inspect</span>
-                          <ArrowRight className="w-3.5 h-3.5" />
-                        </button>
-                      ) : (
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onSelectRequest(req);
-                          }}
-                          className="font-label-sm px-2 py-1 rounded text-[#68716B] hover:text-[#181C1A] hover:bg-[#ECEFEB] transition-colors"
-                        >
-                          View
-                        </button>
-                      )}
-                    </td>
-                  </tr>
-                );
-              })}
-
-              {paginatedRequests.length === 0 && (
-                <tr>
-                  <td colSpan={7} className="py-8 text-center text-[#68716B] font-mono text-[12px]">
-                    No requests match the current filters.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
       </div>
 
-      {/* Pagination Footer */}
+      <ul className="block divide-y divide-border-default/60 @xl:hidden">
+        {paginatedRequests.map((request) => {
+          const isSelected = request.id === selectedRequestId;
+          const isError = request.status >= 500;
+          const isWarning = request.status >= 400 && request.status < 500;
+
+          return (
+            <li key={request.id}>
+              <div
+                role="button"
+                tabIndex={0}
+                onClick={() => onSelectRequest(request)}
+                onKeyDown={(event) => handleRequestKeyDown(event, request)}
+                aria-label={`Inspect request ${request.id}`}
+                className={cn(
+                  "cursor-pointer px-4 py-3 outline-none transition-colors duration-100",
+                  "hover:bg-surface-muted focus-visible:bg-surface-muted focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-accent",
+                  isSelected && "bg-accent-soft/60 hover:bg-accent-soft/80",
+                )}
+              >
+                <div className="flex min-w-0 items-center justify-between gap-2">
+                  <div className="flex min-w-0 items-center gap-2">
+                    <MethodBadge method={request.method} />
+                    <span className="truncate font-code-inline text-[12px] font-medium text-text-primary">
+                      {request.endpoint}
+                    </span>
+                  </div>
+
+                  <StatusBadge
+                    status={request.status}
+                    text={request.statusText}
+                  />
+                </div>
+
+                <div className="mt-1.5 flex items-center justify-between gap-2 font-code-inline text-[11px] text-text-secondary">
+                  <span className="truncate">
+                    {request.time} · {request.project}
+                  </span>
+
+                  <span
+                    className={cn(
+                      "shrink-0",
+                      isError
+                        ? "font-semibold text-danger"
+                        : isWarning
+                          ? "font-medium text-warning"
+                          : "text-text-secondary",
+                    )}
+                  >
+                    {request.latency.toLocaleString()}ms
+                  </span>
+                </div>
+              </div>
+            </li>
+          );
+        })}
+
+        {paginatedRequests.length === 0 && (
+          <li className="px-4 py-10 text-center font-mono text-[12px] text-text-secondary">
+            No requests match the current filters.
+          </li>
+        )}
+      </ul>
+
+      <div className="hidden min-w-0 @xl:block">
+        <table className="w-full table-fixed border-collapse text-left">
+          <caption className="sr-only">Recent API requests</caption>
+
+          <colgroup>
+            <col className="w-[104px]" />
+            <col className="w-[72px]" />
+            <col />
+            <col className="w-[168px]" />
+            <col className="w-[96px]" />
+            <col className="hidden @3xl:table-column @3xl:w-[132px]" />
+          </colgroup>
+
+          <thead>
+            <tr className="border-b border-border-default bg-surface-muted font-label-sm uppercase tracking-wider text-text-secondary">
+              <th
+                scope="col"
+                className="whitespace-nowrap px-4 py-2.5 font-semibold"
+              >
+                Time (UTC)
+              </th>
+
+              <th scope="col" className="px-4 py-2.5 font-semibold">
+                Method
+              </th>
+
+              <th scope="col" className="px-4 py-2.5 font-semibold">
+                Endpoint
+              </th>
+
+              <th scope="col" className="px-4 py-2.5 font-semibold">
+                Status
+              </th>
+
+              <th scope="col" className="px-4 py-2.5 text-right font-semibold">
+                Latency
+              </th>
+
+              <th
+                scope="col"
+                className="hidden px-4 py-2.5 font-semibold @3xl:table-cell"
+              >
+                Project
+              </th>
+            </tr>
+          </thead>
+
+          <tbody className="divide-y divide-border-default/60 text-[12px]">
+            {paginatedRequests.map((request) => {
+              const isSelected = request.id === selectedRequestId;
+              const isError = request.status >= 500;
+              const isWarning = request.status >= 400 && request.status < 500;
+
+              return (
+                <tr
+                  key={request.id}
+                  tabIndex={0}
+                  onClick={() => onSelectRequest(request)}
+                  onKeyDown={(event) => handleRequestKeyDown(event, request)}
+                  aria-label={`Inspect request ${request.id}`}
+                  className={cn(
+                    "cursor-pointer outline-none transition-colors duration-100",
+                    "hover:bg-surface-muted focus-visible:bg-surface-muted focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-accent",
+                    isSelected && "bg-accent-soft/60 hover:bg-accent-soft/80",
+                  )}
+                >
+                  <td className="whitespace-nowrap px-4 py-3 font-code-inline text-text-primary">
+                    {request.time}
+                  </td>
+
+                  <td className="px-4 py-3">
+                    <MethodBadge method={request.method} />
+                  </td>
+
+                  <td className="truncate px-4 py-3 font-code-inline font-medium text-text-primary">
+                    {request.endpoint}
+                  </td>
+
+                  <td className="overflow-hidden px-4 py-3">
+                    <StatusBadge
+                      status={request.status}
+                      text={request.statusText}
+                    />
+                  </td>
+
+                  <td
+                    className={cn(
+                      "whitespace-nowrap px-4 py-3 text-right font-code-inline",
+                      isError
+                        ? "font-semibold text-danger"
+                        : isWarning
+                          ? "font-medium text-warning"
+                          : "text-text-secondary",
+                    )}
+                  >
+                    {request.latency.toLocaleString()}ms
+                  </td>
+
+                  <td className="hidden truncate px-4 py-3 text-text-secondary @3xl:table-cell">
+                    {request.project}
+                  </td>
+                </tr>
+              );
+            })}
+
+            {paginatedRequests.length === 0 && (
+              <tr>
+                <td
+                  colSpan={6}
+                  className="px-4 py-10 text-center font-mono text-[12px] text-text-secondary"
+                >
+                  No requests match the current filters.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Pagination */}
       <Pagination
-        currentPage={currentPage}
+        currentPage={safeCurrentPage}
         totalPages={totalPages}
-        totalItems={displayTotal}
-        startIndex={1 + (currentPage - 1) * itemsPerPage}
-        endIndex={Math.min(currentPage * itemsPerPage, displayTotal)}
-        onPageChange={(page) => setCurrentPage(page)}
+        totalItems={filteredRequests.length}
+        startIndex={filteredRequests.length > 0 ? startIndex + 1 : 0}
+        endIndex={endIndex}
+        onPageChange={setCurrentPage}
+        itemLabel="requests"
       />
-    </div>
+    </section>
   );
 };
