@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useId } from "react";
 import { cn } from "../../lib/utils";
 
 export interface ToggleProps {
@@ -18,44 +18,66 @@ export const Toggle: React.FC<ToggleProps> = ({
   disabled = false,
   id,
 }) => {
+  const generatedId = useId();
+  const toggleId = id ?? generatedId;
+  const labelId = `${toggleId}-label`;
+  const descriptionId = `${toggleId}-description`;
+
   return (
-    <label
-      htmlFor={id}
+    <div
       className={cn(
-        "flex items-start justify-between gap-3 cursor-pointer select-none",
-        disabled && "opacity-50 cursor-not-allowed"
+        "flex min-w-0 items-start justify-between gap-4 select-none",
+        disabled && "opacity-50",
       )}
     >
       {(label || description) && (
-        <div className="flex-1">
+        <div className="min-w-0 flex-1">
           {label && (
-            <div className="text-[13px] font-medium text-[#181C1A]">{label}</div>
+            <div
+              id={labelId}
+              className="text-[13px] font-medium leading-[18px] text-text-primary"
+            >
+              {label}
+            </div>
           )}
+
           {description && (
-            <div className="text-[12px] text-[#68716B] mt-0.5">{description}</div>
+            <div
+              id={descriptionId}
+              className="mt-0.5 text-[12px] leading-4 text-text-secondary"
+            >
+              {description}
+            </div>
           )}
         </div>
       )}
+
       <button
         type="button"
         role="switch"
         id={id}
         aria-checked={checked}
+        aria-labelledby={label ? labelId : undefined}
+        aria-describedby={description ? descriptionId : undefined}
         disabled={disabled}
-        onClick={() => !disabled && onChange(!checked)}
+        onClick={() => onChange(!checked)}
         className={cn(
-          "relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus-visible:ring-2 focus-visible:ring-[#3F6B5B] focus-visible:ring-offset-2",
-          checked ? "bg-[#265344]" : "bg-[#C0C8C3]"
+          "relative inline-flex h-5 w-9 shrink-0 items-center rounded-full border transition-colors duration-150",
+          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/30",
+          "disabled:cursor-not-allowed",
+          checked
+            ? "border-accent bg-accent"
+            : "border-border-default bg-surface-muted",
         )}
       >
         <span
           aria-hidden="true"
           className={cn(
-            "pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out",
-            checked ? "translate-x-4" : "translate-x-0"
+            "block h-4 w-4 rounded-full border border-border-default bg-surface transition-transform duration-150",
+            checked ? "translate-x-[16px]" : "translate-x-0",
           )}
         />
       </button>
-    </label>
+    </div>
   );
 };
