@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useId, useState } from "react";
 import {
   ResponsiveContainer,
   AreaChart,
@@ -16,212 +16,277 @@ interface RequestVolumeChartProps {
   onRangeChange?: (range: string) => void;
 }
 
+type ChartRange = "24h" | "7d" | "30d" | "90d";
+
+const ranges: ChartRange[] = ["24h", "7d", "30d", "90d"];
+
+const isChartRange = (value: string): value is ChartRange =>
+  ranges.includes(value as ChartRange);
+
 export const RequestVolumeChart: React.FC<RequestVolumeChartProps> = ({
   selectedRange = "30d",
   onRangeChange,
 }) => {
-  const [activeRange, setActiveRange] = useState<string>(selectedRange);
-  const [hoveredPoint, setHoveredPoint] = useState<TimeSeriesPoint | null>(null);
+  const initialRange = isChartRange(selectedRange) ? selectedRange : "30d";
+  const [activeRange, setActiveRange] = useState<ChartRange>(initialRange);
+  const [isChartHovered, setIsChartHovered] = useState(false);
 
-  const ranges = ["24h", "7d", "30d", "90d"];
-  const currentData = volumeChartData[activeRange] || volumeChartData["30d"];
+  const gradientId = `request-volume-gradient-${useId().replace(/:/g, "")}`;
 
-  const handleRangeClick = (range: string) => {
+  useEffect(() => {
+    if (isChartRange(selectedRange)) {
+      setActiveRange(selectedRange);
+    }
+  }, [selectedRange]);
+
+  const currentData = volumeChartData[activeRange] ?? volumeChartData["30d"];
+
+  const peakPoint =
+    currentData.find((point) => point.isPeak) ??
+    currentData[Math.floor(currentData.length / 2)];
+
+  const handleRangeClick = (range: ChartRange) => {
     setActiveRange(range);
-    if (onRangeChange) onRangeChange(range);
+    onRangeChange?.(range);
   };
 
-  // Peak point or hovered point for callout
-  const peakPoint =
-    currentData.find((p) => p.isPeak) || currentData[Math.floor(currentData.length / 2)];
-  const displayPoint = hoveredPoint || peakPoint;
-
   return (
-    <div className="bg-white rounded-lg border border-[#D9DDD7] shadow-sm flex flex-col justify-between h-full">
+    <section className="flex h-full min-w-0 flex-col overflow-hidden rounded-lg border border-border-default bg-surface">
       {/* Header */}
-      <div className="p-5 border-b border-[#D9DDD7]/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div>
-          <div className="text-[16px] text-[#181C1A] font-semibold tracking-tight">
+      <div className="flex shrink-0 flex-col gap-3 border-b border-border-default px-4 py-4 sm:px-5 @2xl:flex-row @2xl:items-center @2xl:justify-between">
+        <div className="min-w-0">
+          <h2 className="text-[16px] font-semibold tracking-tight text-text-primary">
             Request Volume &amp; Throughput
-          </div>
-          <div className="font-label-sm text-[#68716B] mt-0.5">
+          </h2>
+
+          <p className="mt-0.5 truncate font-label-sm text-text-secondary">
             Aggregated across all global edge locations
-          </div>
+          </p>
         </div>
 
-        <div className="flex items-center bg-[#F1F4F1] p-0.5 rounded-lg border border-[#C0C8C3]/50">
-          {ranges.map((r) => {
-            const isActive = activeRange === r;
+        <div
+          className="flex max-w-full items-center gap-0.5 overflow-x-auto rounded-md border border-border-default bg-surface-muted p-0.5"
+          aria-label="Request volume range"
+        >
+          {ranges.map((range) => {
+            const isActive = activeRange === range;
+
             return (
               <button
-                key={r}
+                key={range}
                 type="button"
-                onClick={() => handleRangeClick(r)}
+                aria-pressed={isActive}
+                onClick={() => handleRangeClick(range)}
                 className={cn(
-                  "px-2.5 py-1 text-label-sm transition-colors rounded",
+                  "shrink-0 rounded-sm px-2.5 py-1.5 font-label-sm transition-colors duration-150",
+                  "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent",
                   isActive
-                    ? "bg-white text-[#181C1A] font-semibold shadow-sm"
-                    : "text-[#68716B] hover:text-[#181C1A]"
+                    ? "bg-surface font-semibold text-text-primary"
+                    : "text-text-secondary hover:text-text-primary",
                 )}
               >
-                {r}
+                {range}
               </button>
             );
           })}
         </div>
       </div>
 
-      {/* Chart Canvas */}
-      <div className="relative p-5 sm:p-6 flex-1 min-h-[300px] flex flex-col justify-between">
-        <div className="w-full h-56 relative">
+      {/* Chart */}
+      <div className="min-h-[280px] flex-1 px-4 py-5 sm:px-5 sm:py-6">
+        <div
+          className="h-56 w-full"
+          onMouseEnter={() => setIsChartHovered(true)}
+          onMouseLeave={() => setIsChartHovered(false)}
+        >
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart
               data={currentData}
-              margin={{ top: 12, right: 10, left: -20, bottom: 0 }}
-              onMouseMove={(e: any) => {
-                if (e && e.activePayload && e.activePayload.length) {
-                  setHoveredPoint(e.activePayload[0].payload);
-                }
-              }}
-              onMouseLeave={() => setHoveredPoint(null)}
+              margin={{ top: 8, right: 8, left: -20, bottom: 0 }}
             >
               <defs>
-                <linearGradient id="areaGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#3F6B5B" stopOpacity={0.22} />
-                  <stop offset="100%" stopColor="#3F6B5B" stopOpacity={0.0} />
+                <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
+                  <stop
+                    offset="0%"
+                    stopColor="var(--color-accent)"
+                    stopOpacity={0.18}
+                  />
+                  <stop
+                    offset="100%"
+                    stopColor="var(--color-accent)"
+                    stopOpacity={0}
+                  />
                 </linearGradient>
               </defs>
+
               <CartesianGrid
+                stroke="var(--color-border-default)"
                 strokeDasharray="3 3"
                 vertical={false}
-                stroke="#D9DDD7"
                 opacity={0.8}
               />
+
               <XAxis
                 dataKey="date"
-                stroke="#68716B"
+                stroke="var(--color-text-secondary)"
                 fontSize={11}
-                fontFamily="JetBrains Mono"
+                fontFamily="var(--font-mono)"
                 tickLine={false}
-                axisLine={{ stroke: "#D9DDD7" }}
+                axisLine={{
+                  stroke: "var(--color-border-default)",
+                }}
                 dy={6}
               />
+
               <YAxis
-                stroke="#68716B"
+                stroke="var(--color-text-secondary)"
                 fontSize={11}
-                fontFamily="JetBrains Mono"
+                fontFamily="var(--font-mono)"
                 tickLine={false}
                 axisLine={false}
-                tickFormatter={(val) => `${val >= 1000 ? `${val / 1000}k` : val}`}
+                tickFormatter={(value: number) =>
+                  value >= 1000 ? `${Math.round(value / 1000)}k` : String(value)
+                }
               />
+
               <Tooltip
+                cursor={{
+                  stroke: "var(--color-border-default)",
+                  strokeDasharray: "3 3",
+                }}
                 content={({ active, payload }) => {
-                  if (active && payload && payload.length) {
-                    const data = payload[0].payload as TimeSeriesPoint;
-                    return (
-                      <div className="bg-white border border-[#D9DDD7] shadow-md rounded-lg p-2.5 z-20 w-48 font-mono">
-                        <div className="flex items-center justify-between border-b border-[#D9DDD7]/60 pb-1 mb-1.5">
-                          <span className="font-label-sm font-semibold text-[#181C1A]">
-                            {data.date}
-                          </span>
-                          <span className="font-label-sm text-[#3F765C] bg-[#EBF3EF] px-1 rounded">
-                            {data.sla}% SLA
+                  if (!active || !payload?.length) return null;
+
+                  const data = payload[0]?.payload as TimeSeriesPoint;
+
+                  return (
+                    <div className="w-48 rounded border border-border-default bg-surface p-2.5 shadow-sm">
+                      <div className="mb-1.5 flex items-center justify-between gap-2 border-b border-border-default pb-1">
+                        <span className="font-label-sm font-semibold text-text-primary">
+                          {data.date}
+                        </span>
+
+                        <span className="font-label-sm text-success">
+                          {data.sla}% SLA
+                        </span>
+                      </div>
+
+                      <div className="space-y-0.5">
+                        <div className="flex items-center justify-between gap-3 font-label-sm">
+                          <span className="text-text-secondary">Requests:</span>
+
+                          <span className="font-semibold text-text-primary">
+                            {data.requests.toLocaleString()}
                           </span>
                         </div>
-                        <div className="space-y-0.5">
-                          <div className="flex justify-between font-label-sm">
-                            <span className="text-[#68716B]">Requests:</span>
-                            <span className="text-[#181C1A] font-semibold">
-                              {data.requests.toLocaleString()} reqs
-                            </span>
-                          </div>
-                          <div className="flex justify-between font-label-sm">
-                            <span className="text-[#68716B]">p95 Latency:</span>
-                            <span className="text-[#181C1A] font-medium">
-                              {data.p95Latency} ms
-                            </span>
-                          </div>
+
+                        <div className="flex items-center justify-between gap-3 font-label-sm">
+                          <span className="text-text-secondary">
+                            p95 Latency:
+                          </span>
+
+                          <span className="font-medium text-text-primary">
+                            {data.p95Latency} ms
+                          </span>
                         </div>
                       </div>
-                    );
-                  }
-                  return null;
+                    </div>
+                  );
                 }}
               />
+
               <Area
                 type="monotone"
                 dataKey="requests"
-                stroke="#265344"
-                strokeWidth={2.5}
-                fill="url(#areaGradient)"
+                stroke="var(--color-accent)"
+                strokeWidth={2}
+                fill={`url(#${gradientId})`}
+                isAnimationActive={false}
                 activeDot={{
-                  r: 5,
-                  fill: "#FFFFFF",
-                  stroke: "#265344",
-                  strokeWidth: 3,
+                  r: 4,
+                  fill: "var(--color-surface)",
+                  stroke: "var(--color-accent)",
+                  strokeWidth: 2,
                 }}
               />
             </AreaChart>
           </ResponsiveContainer>
-
-          {/* Floating Peak Tooltip Pin when not actively hovering another point */}
-          {!hoveredPoint && (
-            <div className="hidden md:block absolute left-[54%] top-[10%] -translate-x-1/2 bg-white border border-[#D9DDD7] shadow-md rounded-lg p-2.5 z-10 w-48 pointer-events-none">
-              <div className="flex items-center justify-between border-b border-[#D9DDD7]/60 pb-1 mb-1.5">
-                <span className="font-label-sm font-semibold text-[#181C1A]">
-                  Jan 18, 2025
-                </span>
-                <span className="font-label-sm text-[#3F765C] bg-[#EBF3EF] px-1 rounded">
-                  99.6% SLA
-                </span>
-              </div>
-              <div className="space-y-0.5">
-                <div className="flex justify-between font-label-sm">
-                  <span className="text-[#68716B]">Requests:</span>
-                  <span className="text-[#181C1A] font-semibold">68,234 reqs</span>
-                </div>
-                <div className="flex justify-between font-label-sm">
-                  <span className="text-[#68716B]">p95 Latency:</span>
-                  <span className="text-[#181C1A] font-medium">138 ms</span>
-                </div>
-              </div>
-            </div>
-          )}
         </div>
+
+        {/* Peak summary */}
+        {!isChartHovered && peakPoint && (
+          <div className="mt-3 flex items-center justify-between gap-3 border-t border-border-default pt-3">
+            <span className="font-label-sm text-text-secondary">
+              Peak volume
+            </span>
+
+            <div className="flex items-center gap-3">
+              <span className="font-code-inline font-semibold text-text-primary">
+                {peakPoint.requests.toLocaleString()} reqs
+              </span>
+
+              <span className="font-label-sm text-text-secondary">
+                {peakPoint.date}
+              </span>
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* Breakdown Strip (Success, Client Error, Server Error) */}
-      <div className="grid grid-cols-1 md:grid-cols-3 border-t border-[#D9DDD7]/80 divide-y md:divide-y-0 md:divide-x divide-[#D9DDD7]/80 bg-[#F1F4F1]/30 rounded-b-lg">
-        <div className="p-3.5 flex items-center gap-3">
-          <span className="w-2.5 h-2.5 rounded-full bg-[#3F765C] shrink-0" />
-          <div>
-            <div className="font-label-sm text-[#68716B]">Success (2xx)</div>
-            <div className="font-label-md font-semibold text-[#181C1A]">
-              1,821,410 <span className="text-[#3F765C] font-normal">(98.8%)</span>
+      {/* Breakdown */}
+      <div className="grid shrink-0 grid-cols-1 border-t border-border-default bg-surface-muted/30 sm:grid-cols-3 sm:divide-x sm:divide-border-default">
+        <div className="flex items-center gap-3 px-4 py-3.5 sm:px-5">
+          <span
+            className="h-2 w-2 shrink-0 rounded-full bg-success"
+            aria-hidden="true"
+          />
+
+          <div className="min-w-0">
+            <div className="font-label-sm text-text-secondary">
+              Success (2xx)
+            </div>
+
+            <div className="font-label-md font-semibold text-text-primary">
+              1,821,410{" "}
+              <span className="font-normal text-success">(98.8%)</span>
             </div>
           </div>
         </div>
 
-        <div className="p-3.5 flex items-center gap-3">
-          <span className="w-2.5 h-2.5 rounded-full bg-[#B47A2C] shrink-0" />
-          <div>
-            <div className="font-label-sm text-[#68716B]">Client Error (4xx)</div>
-            <div className="font-label-md font-semibold text-[#181C1A]">
-              14,320 <span className="text-[#B47A2C] font-normal">(0.8%)</span>
+        <div className="flex items-center gap-3 px-4 py-3.5 sm:px-5">
+          <span
+            className="h-2 w-2 shrink-0 rounded-full bg-warning"
+            aria-hidden="true"
+          />
+
+          <div className="min-w-0">
+            <div className="font-label-sm text-text-secondary">
+              Client Error (4xx)
+            </div>
+
+            <div className="font-label-md font-semibold text-text-primary">
+              14,320 <span className="font-normal text-warning">(0.8%)</span>
             </div>
           </div>
         </div>
 
-        <div className="p-3.5 flex items-center gap-3">
-          <span className="w-2.5 h-2.5 rounded-full bg-[#B84C45] shrink-0" />
-          <div>
-            <div className="font-label-sm text-[#68716B]">Server Error (5xx)</div>
-            <div className="font-label-md font-semibold text-[#181C1A]">
-              6,561 <span className="text-[#B84C45] font-normal">(0.4%)</span>
+        <div className="flex items-center gap-3 px-4 py-3.5 sm:px-5">
+          <span
+            className="h-2 w-2 shrink-0 rounded-full bg-danger"
+            aria-hidden="true"
+          />
+
+          <div className="min-w-0">
+            <div className="font-label-sm text-text-secondary">
+              Server Error (5xx)
+            </div>
+
+            <div className="font-label-md font-semibold text-text-primary">
+              6,561 <span className="font-normal text-danger">(0.4%)</span>
             </div>
           </div>
         </div>
       </div>
-    </div>
+    </section>
   );
 };
