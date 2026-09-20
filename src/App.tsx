@@ -18,21 +18,21 @@ import type { Project } from "./types/project";
 export default function App() {
   const [currentPage, setCurrentPage] = useState<NavPage>("overview");
   const [projects, setProjects] = useState<Project[]>(mockProjects);
-  const [requests, setRequests] = useState<ApiRequest[]>(mockRequests);
-  const [logs, setLogs] = useState(mockLogs);
+  const [requests] = useState<ApiRequest[]>(mockRequests);
+  const logs = mockLogs;
 
-  // Selected request for the inspection drawer (default to checkout 500 error as shown in design)
+  // Selected request for the inspection drawer
   const [selectedRequest, setSelectedRequest] = useState<ApiRequest | null>(
-    mockRequests[0]
+    mockRequests[0] ?? null,
   );
-  const [isDrawerOpen, setIsDrawerOpen] = useState<boolean>(false);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
   // Modals
   const [isNewProjectOpen, setIsNewProjectOpen] = useState(false);
   const [isExportOpen, setIsExportOpen] = useState(false);
   const [isDocsOpen, setIsDocsOpen] = useState(false);
 
-  // Search & Deep-linking filters
+  // Search & deep-linking filters
   const [searchQuery, setSearchQuery] = useState("");
   const [logFilter, setLogFilter] = useState("");
   const [requestFilter, setRequestFilter] = useState("");
@@ -68,18 +68,20 @@ export default function App() {
       activeVersion: "v1.0.0",
       lastDeployed: "Just now",
     };
+
     setProjects((prev) => [project, ...prev]);
   };
 
-  // Filter requests when global search is used
-  const filteredRequests = requests.filter((r) => {
-    if (!searchQuery.trim()) return true;
-    const q = searchQuery.toLowerCase();
+  const filteredRequests = requests.filter((request) => {
+    const query = searchQuery.trim().toLowerCase();
+
+    if (!query) return true;
+
     return (
-      r.endpoint.toLowerCase().includes(q) ||
-      r.id.toLowerCase().includes(q) ||
-      r.project.toLowerCase().includes(q) ||
-      r.clientIp.toLowerCase().includes(q)
+      request.endpoint.toLowerCase().includes(query) ||
+      request.id.toLowerCase().includes(query) ||
+      request.project.toLowerCase().includes(query) ||
+      request.clientIp.toLowerCase().includes(query)
     );
   });
 
@@ -88,11 +90,20 @@ export default function App() {
       currentPage={currentPage}
       onNavigate={(page) => {
         setCurrentPage(page);
-        if (page !== "logs") setLogFilter("");
-        if (page !== "requests") setRequestFilter("");
+
+        if (page !== "logs") {
+          setLogFilter("");
+        }
+
+        if (page !== "requests") {
+          setRequestFilter("");
+        }
       }}
       onOpenDrawer={() => {
-        if (!selectedRequest) setSelectedRequest(requests[0]);
+        if (!selectedRequest) {
+          setSelectedRequest(requests[0] ?? null);
+        }
+
         setIsDrawerOpen(true);
       }}
       onOpenDocs={() => setIsDocsOpen(true)}
@@ -147,6 +158,7 @@ export default function App() {
       <ExportModal
         isOpen={isExportOpen}
         onClose={() => setIsExportOpen(false)}
+        requests={requests}
       />
 
       <DocsModal isOpen={isDocsOpen} onClose={() => setIsDocsOpen(false)} />

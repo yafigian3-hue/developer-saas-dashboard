@@ -1,8 +1,11 @@
-import React, { useState, useMemo } from "react";
-import { Search, ArrowUpDown, Download } from "lucide-react";
+import React, { useState } from "react";
+import { Download } from "lucide-react";
 import { PageContainer } from "../components/layout/PageContainer";
 import { RecentRequestsTable } from "../components/dashboard/RecentRequestsTable";
 import { RequestDetailDrawer } from "../components/dashboard/RequestDetailDrawer";
+import { ExportModal } from "../components/dashboard/ExportModal";
+import { Badge } from "../components/ui/Badge";
+import { Button } from "../components/ui/Button";
 import type { ApiRequest } from "../types/request";
 
 export interface RequestsPageProps {
@@ -24,53 +27,53 @@ export const RequestsPage: React.FC<RequestsPageProps> = ({
   onViewLogs,
   initialFilter = "",
 }) => {
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+
+  const handleOpenExportModal = () => {
+    setIsExportModalOpen(true);
+  };
+
+  const handleCloseExportModal = () => {
+    setIsExportModalOpen(false);
+  };
+
   return (
     <PageContainer>
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
+      <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
+        <div className="min-w-0">
           <div className="flex items-center gap-2">
-            <h1 className="text-[24px] leading-8 font-semibold text-[#181C1A] tracking-tight">
+            <h1 className="text-[24px] font-semibold leading-8 tracking-tight text-text-primary">
               Requests
             </h1>
-            <span className="font-label-sm bg-[#3F6B5B]/20 text-[#265344] border border-[#265344]/30 px-2 py-0.5 rounded font-medium">
+
+            <Badge variant="success" fontFamily="mono">
               Live Stream
-            </span>
+            </Badge>
           </div>
-          <p className="text-[13px] text-[#68716B] mt-0.5">
-            Real-time HTTP ingress trace log with millisecond latency breakdowns.
+
+          <p className="mt-0.5 text-[13px] text-text-secondary">
+            Real-time HTTP ingress trace log with millisecond latency
+            breakdowns.
           </p>
         </div>
 
-        <div className="flex items-center gap-2.5">
-          <button
-            type="button"
-            onClick={() => {
-              const csv =
-                "id,time,method,endpoint,status,latency,project\n" +
-                requests
-                  .map(
-                    (r) =>
-                      `${r.id},${r.time},${r.method},${r.endpoint},${r.status},${r.latency},${r.project}`
-                  )
-                  .join("\n");
-              const blob = new Blob([csv], { type: "text/csv" });
-              const url = URL.createObjectURL(blob);
-              const a = document.createElement("a");
-              a.href = url;
-              a.download = `requests-telemetry-${Date.now()}.csv`;
-              a.click();
-            }}
-            className="flex items-center gap-1.5 bg-white hover:bg-[#F0F1EE] px-3 py-1.5 rounded-lg border border-[#D9DDD7] shadow-sm text-[#181C1A] text-[12px] font-medium transition-colors"
+        {/* Export */}
+        <div className="flex w-full shrink-0 items-center sm:w-auto">
+          <Button
+            variant="primary"
+            size="sm"
+            onClick={handleOpenExportModal}
+            className="w-full sm:w-auto"
           >
-            <Download className="w-3.5 h-3.5 text-[#58605B]" />
-            <span>Export CSV</span>
-          </button>
+            <Download className="h-3.5 w-3.5" />
+            <span>Export Report</span>
+          </Button>
         </div>
       </div>
 
       {/* Main Table */}
-      <div className="w-full">
+      <div className="w-full min-w-0">
         <RecentRequestsTable
           requests={requests}
           selectedRequestId={selectedRequest?.id}
@@ -85,6 +88,13 @@ export const RequestsPage: React.FC<RequestsPageProps> = ({
         onClose={onCloseDrawer}
         request={selectedRequest}
         onViewLogs={onViewLogs}
+      />
+
+      {/* Export Modal */}
+      <ExportModal
+        isOpen={isExportModalOpen}
+        onClose={handleCloseExportModal}
+        requests={requests}
       />
     </PageContainer>
   );

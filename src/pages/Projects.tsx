@@ -61,10 +61,6 @@ export const ProjectsPage: React.FC<ProjectsPageProps> = ({
           </p>
         </div>
 
-        {/* Controls — full-width and left-aligned on mobile so nothing
-            clings to the right edge with dead space beside it; only
-            becomes the compact, right-aligned row once there's room to
-            sit next to the title (sm: and up) */}
         <div className="flex min-w-0 flex-col gap-2 sm:items-end">
           <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap sm:items-center sm:justify-end sm:gap-2.5">
             <div className="relative w-full sm:w-48 sm:max-w-full">
