@@ -1,24 +1,44 @@
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
-  Code2,
-  X,
   AlertCircle,
-  Copy,
-  Terminal,
   Check,
   CheckCircle2,
-  Clock,
+  Code2,
+  Copy,
+  Terminal,
+  X,
 } from "lucide-react";
 import { Drawer } from "../ui/Drawer";
+import { Button } from "../ui/Button";
+import { Badge } from "../ui/Badge";
 import type { ApiRequest } from "../../types/request";
 import { cn } from "../../lib/utils";
 
-export interface RequestDetailDrawerProps {
+interface RequestDetailDrawerProps {
   isOpen: boolean;
   onClose: () => void;
   request: ApiRequest | null;
   onViewLogs?: (requestId: string) => void;
 }
+
+type RequestTab = "overview" | "headers" | "payload" | "timeline";
+
+const tabs: Array<{ id: RequestTab; label: string }> = [
+  { id: "overview", label: "Overview" },
+  { id: "headers", label: "Headers" },
+  { id: "payload", label: "Payload" },
+  { id: "timeline", label: "Timeline" },
+];
+
+const defaultWaterfall = {
+  dns: 12,
+  tls: 24,
+  ttfb: 1740,
+  transfer: 24,
+};
+
+const formatLatency = (latency: number): string =>
+  latency >= 1000 ? `${(latency / 1000).toFixed(1)}s` : `${latency}ms`;
 
 export const RequestDetailDrawer: React.FC<RequestDetailDrawerProps> = ({
   isOpen,
@@ -26,400 +46,571 @@ export const RequestDetailDrawer: React.FC<RequestDetailDrawerProps> = ({
   request,
   onViewLogs,
 }) => {
-  const [activeTab, setActiveTab] = useState<"overview" | "headers" | "payload" | "timeline">(
-    "overview"
-  );
+  const [activeTab, setActiveTab] = useState<RequestTab>("overview");
   const [copiedCurl, setCopiedCurl] = useState(false);
   const [copiedUrl, setCopiedUrl] = useState(false);
+  const copyTimeoutRef = useRef<number | null>(null);
 
-  if (!request) return null;
+  useEffect(() => {
+    setActiveTab("overview");
+    setCopiedCurl(false);
+    setCopiedUrl(false);
+  }, [request?.id]);
 
-  const is5xx = request.status >= 500;
-  const is4xx = request.status >= 400 && request.status < 500;
-  const is2xx = request.status < 400;
+  useEffect(() => {
+    return () => {
+      if (copyTimeoutRef.current !== null) {
+        window.clearTimeout(copyTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  const drawerOpen = isOpen && Boolean(request);
+
+  const statusTone = useMemo(() => {
+    if (!request) {
+      return {
+        icon: CheckCircle2,
+        label: "",
+        iconClass: "text-success",
+        textClass: "text-success",
+        backgroundClass: "bg-accent-soft",
+        borderClass: "border-accent/20",
+        badgeVariant: "success" as const,
+      };
+    }
+
+    if (request.status >= 500) {
+      return {
+        icon: AlertCircle,
+        label: "Upstream gateway connection failure",
+        iconClass: "text-danger",
+        textClass: "text-danger",
+        backgroundClass: "bg-danger/[0.04]",
+        borderClass: "border-danger/20",
+        badgeVariant: "danger" as const,
+      };
+    }
+
+    if (request.status >= 400) {
+      return {
+        icon: AlertCircle,
+        label: "Client request exception",
+        iconClass: "text-warning",
+        textClass: "text-warning",
+        backgroundClass: "bg-warning/[0.05]",
+        borderClass: "border-warning/20",
+        badgeVariant: "warning" as const,
+      };
+    }
+
+    return {
+      icon: CheckCircle2,
+      label: "Upstream dispatch completed successfully",
+      iconClass: "text-success",
+      textClass: "text-success",
+      backgroundClass: "bg-accent-soft",
+      borderClass: "border-accent/20",
+      badgeVariant: "success" as const,
+    };
+  }, [request]);
+
+  const waterfall = request?.latencyBreakdown ?? defaultWaterfall;
+
+  const totalTime =
+    waterfall.dns + waterfall.tls + waterfall.ttfb + waterfall.transfer;
+
+  const waterfallSegments = [
+    {
+      id: "dns",
+      label: "DNS Lookup",
+      value: waterfall.dns,
+      tone: "bg-accent/35",
+    },
+    {
+      id: "tls",
+      label: "TLS Handshake",
+      value: waterfall.tls,
+      tone: "bg-accent/55",
+    },
+    {
+      id: "ttfb",
+      label:
+        request?.status && request.status >= 500
+          ? "Waiting (TTFB Timeout)"
+          : "Waiting (TTFB)",
+      value: waterfall.ttfb,
+      tone:
+        request?.status && request.status >= 500 ? "bg-danger" : "bg-accent",
+    },
+    {
+      id: "transfer",
+      label: "Response Transfer",
+      value: waterfall.transfer,
+      tone: "bg-accent/25",
+    },
+  ];
+
+  const handleCopy = async (
+    value: string,
+    type: "curl" | "url",
+  ): Promise<void> => {
+    try {
+      if (!navigator.clipboard) return;
+
+      await navigator.clipboard.writeText(value);
+
+      if (copyTimeoutRef.current !== null) {
+        window.clearTimeout(copyTimeoutRef.current);
+      }
+
+      if (type === "curl") {
+        setCopiedCurl(true);
+      } else {
+        setCopiedUrl(true);
+      }
+
+      copyTimeoutRef.current = window.setTimeout(() => {
+        setCopiedCurl(false);
+        setCopiedUrl(false);
+        copyTimeoutRef.current = null;
+      }, 1800);
+    } catch {
+      setCopiedCurl(false);
+      setCopiedUrl(false);
+    }
+  };
 
   const handleCopyCurl = () => {
-    const curl = `curl -X ${request.method} "${request.url}" \\\n  -H "Authorization: Bearer [REDACTED]" \\\n  -H "Content-Type: application/json" \\\n  -H "X-Request-ID: ${request.id}"`;
-    navigator.clipboard?.writeText(curl);
-    setCopiedCurl(true);
-    setTimeout(() => setCopiedCurl(false), 2000);
+    if (!request) return;
+
+    const curl = `curl -X ${request.method} "${request.url}" \\
+  -H "Authorization: Bearer [REDACTED]" \\
+  -H "Content-Type: application/json" \\
+  -H "X-Request-ID: ${request.id}"`;
+
+    void handleCopy(curl, "curl");
   };
 
   const handleCopyUrl = () => {
-    navigator.clipboard?.writeText(request.url);
-    setCopiedUrl(true);
-    setTimeout(() => setCopiedUrl(false), 2000);
+    if (!request) return;
+    void handleCopy(request.url, "url");
   };
 
-  const waterfall = request.latencyBreakdown || {
-    dns: 12,
-    tls: 24,
-    ttfb: 1740,
-    transfer: 24,
-  };
+  if (!request) return null;
 
-  const totalTime = waterfall.dns + waterfall.tls + waterfall.ttfb + waterfall.transfer;
-  const dnsPct = Math.max(2, Math.round((waterfall.dns / totalTime) * 100));
-  const tlsPct = Math.max(2, Math.round((waterfall.tls / totalTime) * 100));
-  const ttfbPct = Math.max(2, Math.round((waterfall.ttfb / totalTime) * 100));
-  const transferPct = Math.max(2, Math.round((waterfall.transfer / totalTime) * 100));
+  const StatusIcon = statusTone.icon;
 
   return (
-    <Drawer isOpen={isOpen} onClose={onClose} width="w-full sm:w-[440px] md:w-[460px]">
-      {/* Drawer Header */}
-      <div className="p-4 border-b border-[#D9DDD7]/80 flex items-center justify-between shrink-0 bg-white">
-        <div className="flex items-center gap-2">
-          <Code2 className="w-[18px] h-[18px] text-[#265344]" />
-          <h3 className="text-[16px] text-[#181C1A] font-semibold tracking-tight">
-            Request Details
-          </h3>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <span className="font-code-inline text-[#68716B] bg-[#ECEFEB] px-2 py-0.5 rounded">
-            {request.id}
-          </span>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Close drawer"
-            className="w-7 h-7 rounded flex items-center justify-center text-[#68716B] hover:text-[#181C1A] hover:bg-[#ECEFEB] transition-colors"
-          >
-            <X className="w-4 h-4" />
-          </button>
-        </div>
-      </div>
+    <Drawer
+      isOpen={drawerOpen}
+      onClose={onClose}
+      width="w-full sm:w-[440px] md:w-[480px]"
+    >
+      <div className="flex h-full min-h-0 flex-col bg-surface">
+        <header className="flex shrink-0 items-center justify-between gap-3 border-b border-border-default px-4 py-3 sm:px-5">
+          <div className="flex min-w-0 items-center gap-2.5">
+            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-border-default bg-surface-muted text-accent">
+              <Code2 className="h-3.5 w-3.5" aria-hidden="true" />
+            </div>
 
-      {/* Drawer Status Banner */}
-      <div
-        className={cn(
-          "p-4 border-b flex items-center justify-between shrink-0",
-          is5xx
-            ? "bg-[#FDF4F4] border-[#F0C4C1]"
-            : is4xx
-            ? "bg-[#FBF5ED] border-[#EED8B8]"
-            : "bg-[#EBF3EF] border-[#C6DFD3]"
-        )}
-      >
-        <div className="flex items-center gap-2.5">
-          {is5xx ? (
-            <AlertCircle className="w-5 h-5 text-[#B84C45] shrink-0" />
-          ) : is4xx ? (
-            <AlertCircle className="w-5 h-5 text-[#B47A2C] shrink-0" />
-          ) : (
-            <CheckCircle2 className="w-5 h-5 text-[#3F765C] shrink-0" />
+            <div className="min-w-0">
+              <h2 className="text-[14px] font-semibold tracking-tight text-text-primary">
+                Request Details
+              </h2>
+              <code className="mt-0.5 block truncate font-code-inline text-[10px] text-text-secondary">
+                {request.id}
+              </code>
+            </div>
+          </div>
+
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onClose}
+            aria-label="Close request details"
+            className="shrink-0"
+          >
+            <X className="h-4 w-4" aria-hidden="true" />
+          </Button>
+        </header>
+
+        <section
+          className={cn(
+            "flex shrink-0 items-start justify-between gap-4 border-b px-4 py-3.5 sm:px-5",
+            statusTone.backgroundClass,
+            statusTone.borderClass,
           )}
-          <div>
+          aria-label="Request status"
+        >
+          <div className="flex min-w-0 items-start gap-2.5">
+            <StatusIcon
+              className={cn("mt-0.5 h-4 w-4 shrink-0", statusTone.iconClass)}
+              aria-hidden="true"
+            />
+
+            <div className="min-w-0">
+              <div className={cn("font-label-md", statusTone.textClass)}>
+                {request.status} {request.statusText}
+              </div>
+              <p className="mt-0.5 text-[11px] leading-4 text-text-secondary">
+                {statusTone.label}
+              </p>
+            </div>
+          </div>
+
+          <div className="shrink-0 text-right">
             <div
               className={cn(
-                "font-label-md font-semibold",
-                is5xx
-                  ? "text-[#B84C45]"
-                  : is4xx
-                  ? "text-[#B47A2C]"
-                  : "text-[#3F765C]"
+                "font-code-inline font-semibold",
+                statusTone.textClass,
               )}
             >
-              {request.status} {request.statusText}
+              {formatLatency(request.latency)}
             </div>
-            <div className="font-label-sm text-[#68716B]">
-              {is5xx
-                ? "Upstream gateway connection failure"
-                : is4xx
-                ? "Client request exception"
-                : "Upstream dispatch completed successfully"}
+            <div className="mt-0.5 font-label-sm text-text-secondary">
+              {request.utcDate}
             </div>
           </div>
-        </div>
+        </section>
 
-        <div className="text-right">
-          <span
-            className={cn(
-              "font-code-inline font-semibold block",
-              is5xx
-                ? "text-[#B84C45]"
-                : is4xx
-                ? "text-[#B47A2C]"
-                : "text-[#181C1A]"
-            )}
-          >
-            {request.latency >= 1000
-              ? `${(request.latency / 1000).toFixed(1)}s`
-              : `${request.latency}ms`}
-          </span>
-          <span className="font-label-sm text-[#68716B]">
-            {request.utcDate}
-          </span>
-        </div>
-      </div>
+        <nav
+          aria-label="Request detail sections"
+          className="flex shrink-0 overflow-x-auto border-b border-border-default bg-surface-muted/40 px-3 sm:px-4"
+        >
+          {tabs.map((tab) => {
+            const isActive = activeTab === tab.id;
 
-      {/* Sub Tabs */}
-      <div className="flex border-b border-[#D9DDD7]/80 px-4 bg-[#F1F4F1]/50 shrink-0">
-        {(["overview", "headers", "payload", "timeline"] as const).map((tab) => {
-          const isActive = activeTab === tab;
-          return (
-            <button
-              key={tab}
-              type="button"
-              onClick={() => setActiveTab(tab)}
-              className={cn(
-                "py-2 px-2.5 font-label-sm capitalize transition-colors",
-                isActive
-                  ? "font-semibold text-[#265344] border-b-2 border-[#265344]"
-                  : "text-[#68716B] hover:text-[#181C1A]"
-              )}
-            >
-              {tab}
-            </button>
-          );
-        })}
-      </div>
+            return (
+              <button
+                key={tab.id}
+                type="button"
+                role="tab"
+                aria-selected={isActive}
+                onClick={() => setActiveTab(tab.id)}
+                className={cn(
+                  "shrink-0 border-b-2 px-2.5 py-2.5 font-label-sm capitalize transition-colors duration-150 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-accent",
+                  isActive
+                    ? "border-accent text-accent"
+                    : "border-transparent text-text-secondary hover:text-text-primary",
+                )}
+              >
+                {tab.label}
+              </button>
+            );
+          })}
+        </nav>
 
-      {/* Scrollable Drawer Content */}
-      <div className="p-5 space-y-5 overflow-y-auto flex-1">
-        {activeTab === "overview" && (
-          <>
-            {/* Latency Waterfall Breakdown */}
-            <div>
-              <div className="font-label-sm uppercase tracking-wider text-[#58605B] mb-2.5 font-semibold">
-                Latency Waterfall Breakdown
-              </div>
-              <div className="space-y-2.5 font-label-sm">
-                <div>
-                  <div className="flex items-center justify-between text-[#68716B] mb-1">
-                    <span>DNS Lookup</span>
-                    <span className="font-code-inline">{waterfall.dns}ms</span>
+        <div className="min-h-0 flex-1 overflow-y-auto">
+          <div className="space-y-6 p-4 sm:p-5">
+            {activeTab === "overview" && (
+              <>
+                <section aria-labelledby="latency-title">
+                  <div className="mb-3">
+                    <h3
+                      id="latency-title"
+                      className="font-label-sm font-semibold uppercase tracking-wide text-text-secondary"
+                    >
+                      Latency Breakdown
+                    </h3>
                   </div>
-                  <div className="w-full bg-[#ECEFEB] h-1.5 rounded-full overflow-hidden">
-                    <div
-                      className="bg-[#265344]/50 h-full rounded-full"
-                      style={{ width: `${dnsPct}%` }}
-                    />
-                  </div>
-                </div>
 
-                <div>
-                  <div className="flex items-center justify-between text-[#68716B] mb-1">
-                    <span>TLS Handshake</span>
-                    <span className="font-code-inline">{waterfall.tls}ms</span>
-                  </div>
-                  <div className="w-full bg-[#ECEFEB] h-1.5 rounded-full overflow-hidden">
-                    <div
-                      className="bg-[#265344]/70 h-full rounded-full"
-                      style={{ width: `${tlsPct}%` }}
-                    />
-                  </div>
-                </div>
+                  <div className="space-y-3">
+                    {waterfallSegments.map((segment) => {
+                      const percentage = totalTime
+                        ? Math.max(
+                            2,
+                            Math.round((segment.value / totalTime) * 100),
+                          )
+                        : 0;
 
-                <div>
-                  <div
-                    className={cn(
-                      "flex items-center justify-between mb-1 font-medium",
-                      is5xx ? "text-[#B84C45]" : "text-[#181C1A]"
-                    )}
-                  >
-                    <span>
-                      {is5xx ? "Waiting (TTFB Timeout)" : "Waiting (TTFB)"}
-                    </span>
-                    <span className="font-code-inline">
-                      {waterfall.ttfb.toLocaleString()}ms
-                    </span>
+                      const isTimeout =
+                        segment.id === "ttfb" && request.status >= 500;
+
+                      return (
+                        <div key={segment.id}>
+                          <div
+                            className={cn(
+                              "mb-1 flex items-center justify-between gap-3 font-label-sm",
+                              isTimeout ? "text-danger" : "text-text-secondary",
+                            )}
+                          >
+                            <span>{segment.label}</span>
+                            <span className="shrink-0 font-code-inline">
+                              {segment.value.toLocaleString()}ms
+                            </span>
+                          </div>
+
+                          <div className="h-1.5 w-full overflow-hidden rounded-sm bg-surface-muted">
+                            <div
+                              className={cn(
+                                "h-full rounded-sm transition-[width] duration-200",
+                                segment.tone,
+                              )}
+                              style={{ width: `${percentage}%` }}
+                              aria-hidden="true"
+                            />
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
-                  <div className="w-full bg-[#ECEFEB] h-1.5 rounded-full overflow-hidden">
-                    <div
-                      className={cn(
-                        "h-full rounded-full",
-                        is5xx ? "bg-[#B84C45]" : "bg-[#265344]"
+                </section>
+
+                <section aria-labelledby="request-url-title">
+                  <div className="mb-2 flex items-center justify-between gap-3">
+                    <h3
+                      id="request-url-title"
+                      className="font-label-sm font-semibold uppercase tracking-wide text-text-secondary"
+                    >
+                      Request URL
+                    </h3>
+
+                    <button
+                      type="button"
+                      onClick={handleCopyUrl}
+                      className="inline-flex shrink-0 items-center gap-1 font-label-sm text-accent transition-colors hover:text-text-primary focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent"
+                    >
+                      {copiedUrl ? (
+                        <>
+                          <Check className="h-3 w-3" aria-hidden="true" />
+                          <span>Copied</span>
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="h-3 w-3" aria-hidden="true" />
+                          <span>Copy</span>
+                        </>
                       )}
-                      style={{ width: `${ttfbPct}%` }}
-                    />
+                    </button>
                   </div>
-                </div>
 
-                <div>
-                  <div className="flex items-center justify-between text-[#68716B] mb-1">
-                    <span>Response Transfer</span>
-                    <span className="font-code-inline">{waterfall.transfer}ms</span>
+                  <div className="rounded-md border border-border-default bg-surface-muted px-3 py-2.5 font-code-inline leading-5 text-text-primary break-all select-all">
+                    {request.url}
                   </div>
-                  <div className="w-full bg-[#ECEFEB] h-1.5 rounded-full overflow-hidden">
-                    <div
-                      className="bg-[#265344]/40 h-full rounded-full"
-                      style={{ width: `${transferPct}%` }}
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
+                </section>
 
-            {/* Request URL */}
-            <div className="space-y-1.5">
-              <div className="flex items-center justify-between">
-                <span className="font-label-sm text-[#58605B] uppercase font-semibold">
-                  Request URL
-                </span>
-                <button
-                  type="button"
-                  onClick={handleCopyUrl}
-                  className="font-label-sm text-[#265344] hover:underline inline-flex items-center gap-1"
+                {request.errorSummary && (
+                  <section aria-labelledby="error-summary-title">
+                    <h3
+                      id="error-summary-title"
+                      className="mb-2 font-label-sm font-semibold uppercase tracking-wide text-danger"
+                    >
+                      Error Trace Summary
+                    </h3>
+
+                    <div className="rounded-md border border-danger/20 bg-danger/[0.04] px-3 py-2.5 font-code-inline leading-5 text-danger break-words select-all">
+                      {request.errorSummary}
+                    </div>
+                  </section>
+                )}
+
+                <section
+                  aria-label="Request metadata"
+                  className="border-t border-border-default pt-4"
                 >
-                  {copiedUrl ? (
-                    <>
-                      <Check className="w-3 h-3" />
-                      <span>Copied</span>
-                    </>
-                  ) : (
-                    <>
-                      <Copy className="w-3 h-3" />
-                      <span>Copy</span>
-                    </>
-                  )}
-                </button>
-              </div>
-              <div className="p-2.5 bg-[#F1F4F1] rounded border border-[#C0C8C3]/50 font-code-inline text-[#181C1A] break-all select-all">
-                {request.url}
-              </div>
-            </div>
+                  <dl className="grid gap-x-5 gap-y-4 sm:grid-cols-2">
+                    <div className="min-w-0">
+                      <dt className="font-label-sm text-text-secondary">
+                        Client IP
+                      </dt>
+                      <dd className="mt-1 break-all font-code-inline font-medium text-text-primary">
+                        {request.clientIp}
+                      </dd>
+                    </div>
 
-            {/* Error Trace Summary */}
-            {request.errorSummary && (
-              <div className="space-y-1.5">
-                <span className="font-label-sm text-[#B84C45] uppercase font-semibold">
-                  Error Trace Summary
-                </span>
-                <div className="p-3 bg-[#FDF4F4] rounded border border-[#F0C4C1] font-code-inline text-[#B84C45] text-[11px] leading-relaxed select-all">
-                  {request.errorSummary}
-                </div>
-              </div>
+                    <div className="min-w-0">
+                      <dt className="font-label-sm text-text-secondary">
+                        Region / Provider
+                      </dt>
+                      <dd className="mt-1 break-words text-[12px] font-medium text-text-primary">
+                        {request.region}
+                      </dd>
+                    </div>
+
+                    <div className="min-w-0">
+                      <dt className="font-label-sm text-text-secondary">
+                        Protocol
+                      </dt>
+                      <dd className="mt-1 break-words font-code-inline text-text-primary">
+                        {request.protocol}
+                      </dd>
+                    </div>
+
+                    <div className="min-w-0">
+                      <dt className="font-label-sm text-text-secondary">
+                        TLS Version
+                      </dt>
+                      <dd className="mt-1 break-words font-code-inline text-text-primary">
+                        {request.tlsVersion}
+                      </dd>
+                    </div>
+                  </dl>
+                </section>
+              </>
             )}
 
-            {/* Metadata Key-Value pairs */}
-            <div className="grid grid-cols-2 gap-3 pt-3 border-t border-[#D9DDD7]/60 font-label-sm">
-              <div>
-                <span className="text-[#68716B] block">Client IP</span>
-                <span className="font-code-inline text-[#181C1A] font-medium">
-                  {request.clientIp}
-                </span>
-              </div>
-              <div>
-                <span className="text-[#68716B] block">Region / Provider</span>
-                <span className="text-[#181C1A] font-medium">
-                  {request.region}
-                </span>
-              </div>
-              <div>
-                <span className="text-[#68716B] block">Protocol</span>
-                <span className="font-code-inline text-[#181C1A]">
-                  {request.protocol}
-                </span>
-              </div>
-              <div>
-                <span className="text-[#68716B] block">TLS Version</span>
-                <span className="font-code-inline text-[#181C1A]">
-                  {request.tlsVersion}
-                </span>
-              </div>
-            </div>
-          </>
-        )}
+            {activeTab === "headers" && (
+              <section aria-labelledby="headers-title">
+                <div className="mb-3 flex items-center justify-between gap-3">
+                  <h3
+                    id="headers-title"
+                    className="font-label-sm font-semibold uppercase tracking-wide text-text-secondary"
+                  >
+                    Request Headers
+                  </h3>
 
-        {/* Headers Tab */}
-        {activeTab === "headers" && (
-          <div className="space-y-3 font-mono text-[11px]">
-            <div className="text-[#58605B] font-sans font-semibold uppercase text-xs">
-              Request Headers
-            </div>
-            <div className="bg-[#F0F1EE] p-3 rounded border border-[#D9DDD7] space-y-2">
-              {request.headers ? (
-                Object.entries(request.headers).map(([key, value]) => (
-                  <div key={key} className="flex flex-col sm:flex-row sm:gap-2 break-all">
-                    <span className="text-[#265344] font-medium">{key}:</span>
-                    <span className="text-[#181C1A]">{value}</span>
-                  </div>
-                ))
-              ) : (
-                <div className="text-[#68716B]">No custom headers recorded.</div>
-              )}
-            </div>
-          </div>
-        )}
+                  <Badge variant={statusTone.badgeVariant} fontFamily="mono">
+                    {Object.keys(request.headers ?? {}).length} headers
+                  </Badge>
+                </div>
 
-        {/* Payload Tab */}
-        {activeTab === "payload" && (
-          <div className="space-y-3 font-mono text-[11px]">
-            <div className="text-[#58605B] font-sans font-semibold uppercase text-xs">
-              Request Payload / Body
-            </div>
-            <div className="p-3 bg-[#F0F1EE] rounded border border-[#D9DDD7] overflow-x-auto text-[#181C1A] whitespace-pre font-code-inline">
-              {request.payload || `// No request body`}
-            </div>
-          </div>
-        )}
-
-        {/* Timeline Tab */}
-        {activeTab === "timeline" && (
-          <div className="space-y-3 font-label-sm">
-            <div className="text-[#58605B] font-sans font-semibold uppercase text-xs">
-              Execution Timeline
-            </div>
-            <div className="space-y-2 relative border-l-2 border-[#D9DDD7] ml-2 pl-4 py-1">
-              {(request.timeline || [
-                { time: "0ms", phase: "Ingress", durationMs: 5, status: "ok" },
-                { time: "5ms", phase: "Backend Proxy", durationMs: request.latency, status: is5xx ? "error" : "ok" },
-              ]).map((evt, idx) => (
-                <div key={idx} className="relative group">
-                  <div
-                    className={cn(
-                      "absolute -left-[21px] top-1 w-2.5 h-2.5 rounded-full border-2 border-white",
-                      evt.status === "error"
-                        ? "bg-[#B84C45]"
-                        : evt.status === "warn"
-                        ? "bg-[#B47A2C]"
-                        : "bg-[#265344]"
-                    )}
-                  />
-                  <div className="flex items-center justify-between">
-                    <span className="font-semibold text-[#181C1A]">{evt.phase}</span>
-                    <span className="font-code-inline text-[#68716B]">{evt.time}</span>
-                  </div>
-                  {evt.details && (
-                    <div className="text-[11px] text-[#68716B] font-mono mt-0.5">
-                      {evt.details}
+                <div className="overflow-x-auto rounded-md border border-border-default bg-surface-muted p-3">
+                  {request.headers &&
+                  Object.keys(request.headers).length > 0 ? (
+                    <div className="space-y-2.5">
+                      {Object.entries(request.headers).map(([key, value]) => (
+                        <div
+                          key={key}
+                          className="grid gap-1 sm:grid-cols-[minmax(120px,0.75fr)_minmax(0,1.5fr)] sm:gap-3"
+                        >
+                          <span className="break-all font-code-inline font-medium text-accent">
+                            {key}
+                          </span>
+                          <span className="break-all font-code-inline text-text-primary">
+                            {value}
+                          </span>
+                        </div>
+                      ))}
                     </div>
+                  ) : (
+                    <p className="font-code-inline text-[11px] text-text-secondary">
+                      No custom headers recorded.
+                    </p>
                   )}
                 </div>
-              ))}
-            </div>
+              </section>
+            )}
+
+            {activeTab === "payload" && (
+              <section aria-labelledby="payload-title">
+                <div className="mb-3">
+                  <h3
+                    id="payload-title"
+                    className="font-label-sm font-semibold uppercase tracking-wide text-text-secondary"
+                  >
+                    Request Payload
+                  </h3>
+                </div>
+
+                <pre className="overflow-x-auto whitespace-pre-wrap break-words rounded-md border border-border-default bg-surface-muted p-3 font-code-inline leading-5 text-text-primary">
+                  {request.payload || "// No request body"}
+                </pre>
+              </section>
+            )}
+
+            {activeTab === "timeline" && (
+              <section aria-labelledby="timeline-title">
+                <div className="mb-4">
+                  <h3
+                    id="timeline-title"
+                    className="font-label-sm font-semibold uppercase tracking-wide text-text-secondary"
+                  >
+                    Execution Timeline
+                  </h3>
+                </div>
+
+                <div className="ml-2 border-l border-border-default pl-5">
+                  {(
+                    request.timeline ?? [
+                      {
+                        time: "0ms",
+                        phase: "Ingress",
+                        durationMs: 5,
+                        status: "ok",
+                      },
+                      {
+                        time: "5ms",
+                        phase: "Backend Proxy",
+                        durationMs: request.latency,
+                        status: request.status >= 500 ? "error" : "ok",
+                      },
+                    ]
+                  ).map((event, index) => {
+                    const eventColor =
+                      event.status === "error"
+                        ? "bg-danger"
+                        : event.status === "warn"
+                          ? "bg-warning"
+                          : "bg-accent";
+
+                    return (
+                      <div
+                        key={`${event.phase}-${index}`}
+                        className="relative pb-5 last:pb-0"
+                      >
+                        <span
+                          className={cn(
+                            "absolute -left-[25px] top-1.5 h-2.5 w-2.5 rounded-full border-2 border-surface",
+                            eventColor,
+                          )}
+                          aria-hidden="true"
+                        />
+
+                        <div className="flex min-w-0 items-start justify-between gap-4">
+                          <div className="min-w-0">
+                            <div className="text-[12px] font-semibold text-text-primary">
+                              {event.phase}
+                            </div>
+
+                            {event.details && (
+                              <p className="mt-0.5 break-words font-code-inline text-[11px] leading-4 text-text-secondary">
+                                {event.details}
+                              </p>
+                            )}
+                          </div>
+
+                          <span className="shrink-0 font-code-inline text-[11px] text-text-secondary">
+                            {event.time}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </section>
+            )}
           </div>
-        )}
-      </div>
+        </div>
 
-      {/* Drawer Sticky Action Footer */}
-      <div className="p-4 border-t border-[#D9DDD7]/80 bg-white flex items-center gap-2.5 shrink-0">
-        <button
-          type="button"
-          onClick={handleCopyCurl}
-          className="flex-1 py-2 px-3 rounded-lg bg-[#F1F4F1] hover:bg-[#ECEFEB] border border-[#C0C8C3]/50 text-[#181C1A] text-[12px] font-medium flex items-center justify-center gap-1.5 transition-colors"
-        >
-          {copiedCurl ? (
-            <>
-              <Check className="w-4 h-4 text-[#3F765C]" />
-              <span>Copied!</span>
-            </>
-          ) : (
-            <>
-              <Copy className="w-4 h-4 text-[#58605B]" />
-              <span>Copy cURL</span>
-            </>
-          )}
-        </button>
+        <footer className="flex shrink-0 gap-2 border-t border-border-default bg-surface px-4 py-3 sm:px-5">
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={handleCopyCurl}
+            className="min-w-0 flex-1"
+          >
+            {copiedCurl ? (
+              <Check className="h-3.5 w-3.5 text-success" aria-hidden="true" />
+            ) : (
+              <Copy className="h-3.5 w-3.5" aria-hidden="true" />
+            )}
+            <span className="truncate">
+              {copiedCurl ? "Copied" : "Copy cURL"}
+            </span>
+          </Button>
 
-        <button
-          type="button"
-          onClick={() => onViewLogs && onViewLogs(request.id)}
-          className="flex-1 py-2 px-3 rounded-lg bg-[#265344] hover:bg-[#1f4538] text-white text-[12px] font-medium flex items-center justify-center gap-1.5 transition-colors"
-        >
-          <Terminal className="w-4 h-4" />
-          <span>View Logs</span>
-        </button>
+          <Button
+            variant="primary"
+            size="sm"
+            onClick={() => onViewLogs?.(request.id)}
+            disabled={!onViewLogs}
+            className="min-w-0 flex-1"
+          >
+            <Terminal className="h-3.5 w-3.5" aria-hidden="true" />
+            <span className="truncate">View Logs</span>
+          </Button>
+        </footer>
       </div>
     </Drawer>
   );
