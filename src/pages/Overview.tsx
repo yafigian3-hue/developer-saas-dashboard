@@ -36,8 +36,10 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({
   };
 
   const handleInspectTraceFromErrors = (endpointPath?: string) => {
+    if (requests.length === 0) return;
+
     const matchedRequest = endpointPath
-      ? requests.find((r) => r.endpoint === endpointPath)
+      ? requests.find((request) => request.endpoint === endpointPath)
       : undefined;
 
     onSelectRequest(matchedRequest ?? requests[0]);
@@ -66,7 +68,6 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({
           />
         </div>
 
-       
         <div className="min-w-0">
           <MetricCard
             title="Error Rate"
@@ -121,7 +122,7 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({
         </div>
       </div>
 
-      <div className="grid grid-cols-12 items-stretch gap-6">
+      <div className="grid grid-cols-12 items-stretch gap-4">
         <div className="col-span-12 min-w-0 lg:col-span-8">
           <RequestVolumeChart
             selectedRange={dateRange}
@@ -134,7 +135,7 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({
         </div>
       </div>
 
-      <div className="grid grid-cols-12 items-stretch gap-6">
+      <div className="grid grid-cols-12 items-stretch gap-4">
         <div className="col-span-12 min-w-0 lg:col-span-8">
           <RecentRequestsTable
             requests={requests}
