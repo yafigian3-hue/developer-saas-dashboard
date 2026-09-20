@@ -1,9 +1,10 @@
 import React, { useState } from "react";
-import { Plus, Search, FolderTree, ArrowUpRight, Activity } from "lucide-react";
+import { Plus, Search, FolderTree, ArrowUpRight } from "lucide-react";
 import { PageContainer } from "../components/layout/PageContainer";
 import { Card } from "../components/ui/Card";
 import { Badge } from "../components/ui/Badge";
 import { Button } from "../components/ui/Button";
+import { Input } from "../components/ui/Input";
 import type { Project } from "../types/project";
 import { cn } from "../lib/utils";
 
@@ -19,66 +20,83 @@ export const ProjectsPage: React.FC<ProjectsPageProps> = ({
   onSelectProjectRequests,
 }) => {
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState<"all" | "healthy" | "degraded">("all");
+  const [statusFilter, setStatusFilter] = useState<
+    "all" | "healthy" | "degraded"
+  >("all");
 
-  const filteredProjects = projects.filter((p) => {
-    if (statusFilter !== "all" && p.status !== statusFilter) return false;
-    if (search.trim()) {
-      const q = search.toLowerCase();
-      return p.name.toLowerCase().includes(q) || p.slug.toLowerCase().includes(q);
+  const filteredProjects = projects.filter((project) => {
+    if (statusFilter !== "all" && project.status !== statusFilter) {
+      return false;
     }
+
+    if (search.trim()) {
+      const query = search.toLowerCase();
+
+      return (
+        project.name.toLowerCase().includes(query) ||
+        project.slug.toLowerCase().includes(query)
+      );
+    }
+
     return true;
   });
 
   return (
     <PageContainer>
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
+      <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
+        <div className="min-w-0">
           <div className="flex items-center gap-2">
-            <h1 className="text-[24px] leading-8 font-semibold text-[#181C1A] tracking-tight">
+            <h1 className="text-[24px] font-semibold leading-8 tracking-tight text-text-primary">
               Projects
             </h1>
-            <span className="font-label-sm bg-[#ECEFEB] text-[#58605B] px-2 py-0.5 rounded border border-[#C0C8C3]/50">
+
+            <span className="rounded border border-border-default bg-surface-muted px-2 py-0.5 font-label-sm text-text-secondary">
               {projects.length} Total
             </span>
           </div>
-          <p className="text-[13px] text-[#68716B] mt-0.5">
+
+          <p className="mt-0.5 text-[13px] text-text-secondary">
             Active microservices, API gateways, and distributed workers.
           </p>
         </div>
 
-        <div className="flex items-center gap-2.5">
-          <div className="relative">
-            <Search className="w-3.5 h-3.5 text-[#68716B] absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-            <input
-              type="text"
+        <div className="flex min-w-0 flex-wrap items-center gap-2.5">
+          <div className="relative w-48 max-w-full">
+            <Search
+              className="pointer-events-none absolute left-2.5 top-1/2 z-10 h-3.5 w-3.5 -translate-y-1/2 text-text-secondary"
+              aria-hidden="true"
+            />
+
+            <Input
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(event) => setSearch(event.target.value)}
               placeholder="Search projects..."
-              className="h-8 w-48 pl-8 pr-3 text-[12px] bg-white border border-[#D9DDD7] rounded-lg focus:outline-none focus:border-[#265344]"
+              className="w-full pl-8"
+              aria-label="Search projects"
             />
           </div>
 
           <Button variant="primary" size="sm" onClick={onOpenNewProject}>
-            <Plus className="w-3.5 h-3.5" />
+            <Plus className="h-3.5 w-3.5" />
             <span>New Project</span>
           </Button>
         </div>
       </div>
 
       {/* Filter Tabs */}
-      <div className="flex items-center gap-2 border-b border-[#D9DDD7] pb-3">
+      <div className="flex items-center gap-2 overflow-x-auto border-b border-border-default pb-3">
         {(["all", "healthy", "degraded"] as const).map((status) => (
           <button
             key={status}
             type="button"
             onClick={() => setStatusFilter(status)}
             className={cn(
-              "px-3 py-1 text-label-sm rounded-md capitalize transition-colors",
+              "shrink-0 rounded-md px-3 py-1 font-label-sm capitalize transition-colors duration-150",
+              "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent",
               statusFilter === status
-                ? "bg-[#265344] text-white font-medium"
-                : "bg-white text-[#68716B] border border-[#D9DDD7] hover:bg-[#F0F1EE]"
+                ? "bg-accent text-white"
+                : "border border-border-default bg-surface text-text-secondary hover:bg-surface-muted",
             )}
           >
             {status}
@@ -86,86 +104,104 @@ export const ProjectsPage: React.FC<ProjectsPageProps> = ({
         ))}
       </div>
 
-      {/* Projects Grid: 12-col grid */}
-      <div className="grid grid-cols-12 gap-6">
-        {filteredProjects.map((project) => {
-          return (
-            <div
-              key={project.id}
-              className="col-span-12 md:col-span-6 xl:col-span-4 min-w-0"
-            >
-              <Card className="hover:border-[#265344]/50 transition-colors flex flex-col justify-between h-full p-5">
-                <div>
-                  <div className="flex items-center justify-between gap-2 mb-2">
-                    <div className="flex items-center gap-2">
-                      <div className="w-7 h-7 rounded bg-[#F1F4F1] border border-[#D9DDD7] flex items-center justify-center text-[#265344]">
-                        <FolderTree className="w-3.5 h-3.5" />
-                      </div>
-                      <div>
-                        <h3 className="text-[14px] font-semibold text-[#181C1A] leading-tight">
-                          {project.name}
-                        </h3>
-                        <span className="font-code-inline text-[11px] text-[#68716B]">
-                          {project.slug}
-                        </span>
-                      </div>
+      {/* Projects Grid */}
+      <div className="grid grid-cols-12 gap-4">
+        {filteredProjects.map((project) => (
+          <div
+            key={project.id}
+            className="col-span-12 min-w-0 md:col-span-6 xl:col-span-4"
+          >
+            <Card className="flex h-full flex-col justify-between p-5 transition-colors hover:border-accent/50">
+              <div>
+                <div className="mb-2 flex items-center justify-between gap-2">
+                  <div className="flex min-w-0 items-center gap-2">
+                    <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded border border-border-default bg-accent-soft text-accent">
+                      <FolderTree className="h-3.5 w-3.5" />
                     </div>
 
-                    <Badge
-                      variant={project.status === "healthy" ? "success" : "warning"}
-                      fontFamily="mono"
-                    >
-                      <span className="w-1.5 h-1.5 rounded-full bg-current" />
-                      {project.status === "healthy" ? "Healthy" : "Degraded"}
-                    </Badge>
-                  </div>
+                    <div className="min-w-0">
+                      <h3 className="truncate text-[14px] font-semibold leading-tight text-text-primary">
+                        {project.name}
+                      </h3>
 
-                  <p className="text-[12px] text-[#68716B] mt-2 mb-4 line-clamp-2">
-                    {project.description}
-                  </p>
-
-                  <div className="grid grid-cols-3 gap-2 py-2.5 px-3 bg-[#F1F4F1]/60 rounded-md border border-[#D9DDD7]/60 mb-4 font-mono text-[11px]">
-                    <div>
-                      <span className="text-[#68716B] block text-[10px]">REQUESTS</span>
-                      <span className="font-semibold text-[#181C1A]">
-                        {(project.requestsTotal / 1000).toFixed(0)}k
-                      </span>
-                    </div>
-                    <div>
-                      <span className="text-[#68716B] block text-[10px]">ERROR RATE</span>
-                      <span
-                        className={cn(
-                          "font-semibold",
-                          project.errorRate > 0.5 ? "text-[#B84C45]" : "text-[#3F765C]"
-                        )}
-                      >
-                        {project.errorRate}%
-                      </span>
-                    </div>
-                    <div>
-                      <span className="text-[#68716B] block text-[10px]">LATENCY</span>
-                      <span className="font-semibold text-[#181C1A]">
-                        {project.avgLatency}ms
+                      <span className="block truncate font-code-inline text-text-secondary">
+                        {project.slug}
                       </span>
                     </div>
                   </div>
-                </div>
 
-                <div className="pt-3 border-t border-[#D9DDD7]/60 flex items-center justify-between text-[11px] font-mono text-[#68716B]">
-                  <span>Deployed {project.lastDeployed}</span>
-                  <button
-                    type="button"
-                    onClick={() => onSelectProjectRequests(project.name)}
-                    className="text-[#265344] hover:underline font-sans font-medium flex items-center gap-1"
+                  <Badge
+                    variant={
+                      project.status === "healthy" ? "success" : "warning"
+                    }
+                    fontFamily="mono"
                   >
-                    <span>View Telemetry</span>
-                    <ArrowUpRight className="w-3.5 h-3.5" />
-                  </button>
+                    <span className="h-1.5 w-1.5 rounded-full bg-current" />
+                    {project.status === "healthy" ? "Healthy" : "Degraded"}
+                  </Badge>
                 </div>
-              </Card>
-            </div>
-          );
-        })}
+
+                <p className="mb-4 mt-2 line-clamp-2 text-[12px] text-text-secondary">
+                  {project.description}
+                </p>
+
+                <div className="mb-4 grid grid-cols-3 gap-2 rounded-md border border-border-default bg-surface-muted px-3 py-2.5 font-mono text-[11px]">
+                  <div className="min-w-0">
+                    <span className="mb-0.5 block text-[10px] text-text-secondary">
+                      REQUESTS
+                    </span>
+
+                    <span className="font-semibold text-text-primary">
+                      {(project.requestsTotal / 1000).toFixed(0)}k
+                    </span>
+                  </div>
+
+                  <div className="min-w-0">
+                    <span className="mb-0.5 block text-[10px] text-text-secondary">
+                      ERROR RATE
+                    </span>
+
+                    <span
+                      className={cn(
+                        "font-semibold",
+                        project.errorRate > 0.5
+                          ? "text-danger"
+                          : "text-success",
+                      )}
+                    >
+                      {project.errorRate}%
+                    </span>
+                  </div>
+
+                  <div className="min-w-0">
+                    <span className="mb-0.5 block text-[10px] text-text-secondary">
+                      LATENCY
+                    </span>
+
+                    <span className="font-semibold text-text-primary">
+                      {project.avgLatency}ms
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between gap-3 border-t border-border-default pt-3 font-mono text-[11px] text-text-secondary">
+                <span className="truncate">
+                  Deployed {project.lastDeployed}
+                </span>
+
+                <button
+                  type="button"
+                  onClick={() => onSelectProjectRequests(project.name)}
+                  className="flex shrink-0 items-center gap-1 font-sans text-[11px] font-medium text-accent transition-colors hover:underline focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent"
+                >
+                  <span>View Telemetry</span>
+                  <ArrowUpRight className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            </Card>
+          </div>
+        ))}
       </div>
     </PageContainer>
   );
