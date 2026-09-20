@@ -61,47 +61,58 @@ export const ProjectsPage: React.FC<ProjectsPageProps> = ({
           </p>
         </div>
 
-        <div className="flex min-w-0 flex-wrap items-center gap-2.5">
-          <div className="relative w-48 max-w-full">
-            <Search
-              className="pointer-events-none absolute left-2.5 top-1/2 z-10 h-3.5 w-3.5 -translate-y-1/2 text-text-secondary"
-              aria-hidden="true"
-            />
+        {/* Controls — full-width and left-aligned on mobile so nothing
+            clings to the right edge with dead space beside it; only
+            becomes the compact, right-aligned row once there's room to
+            sit next to the title (sm: and up) */}
+        <div className="flex min-w-0 flex-col gap-2 sm:items-end">
+          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap sm:items-center sm:justify-end sm:gap-2.5">
+            <div className="relative w-full sm:w-48 sm:max-w-full">
+              <Search
+                className="pointer-events-none absolute left-2.5 top-1/2 z-10 h-3.5 w-3.5 -translate-y-1/2 text-text-secondary"
+                aria-hidden="true"
+              />
 
-            <Input
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              placeholder="Search projects..."
-              className="w-full pl-8"
-              aria-label="Search projects"
-            />
+              <Input
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                placeholder="Search projects..."
+                className="w-full pl-8"
+                aria-label="Search projects"
+              />
+            </div>
+
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={onOpenNewProject}
+              className="w-full sm:w-auto"
+            >
+              <Plus className="h-3.5 w-3.5" />
+              <span>New Project</span>
+            </Button>
           </div>
 
-          <Button variant="primary" size="sm" onClick={onOpenNewProject}>
-            <Plus className="h-3.5 w-3.5" />
-            <span>New Project</span>
-          </Button>
+          {/* Filter Tabs */}
+          <div className="flex flex-wrap items-center gap-1.5 sm:justify-end">
+            {(["all", "healthy", "degraded"] as const).map((status) => (
+              <button
+                key={status}
+                type="button"
+                onClick={() => setStatusFilter(status)}
+                className={cn(
+                  "shrink-0 rounded-md px-3 py-1 font-label-sm capitalize transition-colors duration-150",
+                  "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent",
+                  statusFilter === status
+                    ? "bg-accent text-white"
+                    : "border border-border-default bg-surface text-text-secondary hover:bg-surface-muted",
+                )}
+              >
+                {status}
+              </button>
+            ))}
+          </div>
         </div>
-      </div>
-
-      {/* Filter Tabs */}
-      <div className="flex items-center gap-2 overflow-x-auto border-b border-border-default pb-3">
-        {(["all", "healthy", "degraded"] as const).map((status) => (
-          <button
-            key={status}
-            type="button"
-            onClick={() => setStatusFilter(status)}
-            className={cn(
-              "shrink-0 rounded-md px-3 py-1 font-label-sm capitalize transition-colors duration-150",
-              "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent",
-              statusFilter === status
-                ? "bg-accent text-white"
-                : "border border-border-default bg-surface text-text-secondary hover:bg-surface-muted",
-            )}
-          >
-            {status}
-          </button>
-        ))}
       </div>
 
       {/* Projects Grid */}
@@ -135,6 +146,7 @@ export const ProjectsPage: React.FC<ProjectsPageProps> = ({
                       project.status === "healthy" ? "success" : "warning"
                     }
                     fontFamily="mono"
+                    className="shrink-0"
                   >
                     <span className="h-1.5 w-1.5 rounded-full bg-current" />
                     {project.status === "healthy" ? "Healthy" : "Degraded"}
