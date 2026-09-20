@@ -108,7 +108,7 @@ export const RecentRequestsTable: React.FC<RecentRequestsTableProps> = ({
 
           {/* Controls */}
           <div className="flex min-w-0 flex-col gap-2 @md:flex-row @md:items-center @2xl:shrink-0">
-            <div className="flex max-w-full items-center gap-0.5 overflow-x-auto rounded-md border border-border-default bg-surface-muted p-0.5">
+            <div className="flex max-w-full items-center gap-2 overflow-x-auto">
               {statusFilters.map((filter) => {
                 const isActive = activeFilter === filter.id;
 
@@ -119,10 +119,10 @@ export const RecentRequestsTable: React.FC<RecentRequestsTableProps> = ({
                     onClick={() => handleFilterChange(filter.id)}
                     aria-pressed={isActive}
                     className={cn(
-                      "shrink-0 rounded-sm px-2.5 py-1.5 font-label-sm transition-colors duration-150 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent",
+                      "shrink-0 rounded-md border px-3 py-1.5 font-label-sm transition-colors duration-150 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent",
                       isActive
-                        ? "bg-surface font-semibold text-text-primary"
-                        : "text-text-secondary hover:text-text-primary",
+                        ? "border-accent bg-accent font-semibold text-white hover:bg-accent/90"
+                        : "border-border-default bg-surface text-text-secondary hover:bg-surface-muted hover:text-text-primary",
                     )}
                   >
                     {filter.label}
