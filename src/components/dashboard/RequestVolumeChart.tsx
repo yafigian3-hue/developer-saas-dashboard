@@ -52,10 +52,9 @@ export const RequestVolumeChart: React.FC<RequestVolumeChartProps> = ({
 
   return (
     <section className="flex h-full min-w-0 flex-col overflow-hidden rounded-lg border border-border-default bg-surface">
-      {/* Header */}
-      <div className="flex shrink-0 flex-col gap-3 border-b border-border-default px-4 py-4 sm:px-5 @2xl:flex-row @2xl:items-center @2xl:justify-between">
+      <header className="flex min-w-0 items-start justify-between gap-4 border-b border-border-default px-4 py-4 sm:px-5">
         <div className="min-w-0">
-          <h2 className="text-[16px] font-semibold tracking-tight text-text-primary">
+          <h2 className="truncate text-[16px] font-semibold tracking-tight text-text-primary">
             Request Volume &amp; Throughput
           </h2>
 
@@ -64,35 +63,36 @@ export const RequestVolumeChart: React.FC<RequestVolumeChartProps> = ({
           </p>
         </div>
 
-        <div
-          className="flex max-w-full items-center gap-0.5 overflow-x-auto rounded-md border border-border-default bg-surface-muted p-0.5"
-          aria-label="Request volume range"
-        >
-          {ranges.map((range) => {
-            const isActive = activeRange === range;
+        <div className="min-w-0 shrink-0">
+          <div
+            className="flex max-w-full items-center gap-2 overflow-x-auto pb-0.5"
+            aria-label="Request volume range"
+          >
+            {ranges.map((range) => {
+              const isActive = activeRange === range;
 
-            return (
-              <button
-                key={range}
-                type="button"
-                aria-pressed={isActive}
-                onClick={() => handleRangeClick(range)}
-                className={cn(
-                  "shrink-0 rounded-sm px-2.5 py-1.5 font-label-sm transition-colors duration-150",
-                  "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent",
-                  isActive
-                    ? "bg-surface font-semibold text-text-primary"
-                    : "text-text-secondary hover:text-text-primary",
-                )}
-              >
-                {range}
-              </button>
-            );
-          })}
+              return (
+                <button
+                  key={range}
+                  type="button"
+                  aria-pressed={isActive}
+                  onClick={() => handleRangeClick(range)}
+                  className={cn(
+                    "shrink-0 rounded-md border px-3 py-1.5 font-label-sm transition-colors duration-150",
+                    "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent",
+                    isActive
+                      ? "border-accent bg-accent font-semibold text-white hover:bg-accent/90"
+                      : "border-border-default bg-surface text-text-secondary hover:bg-surface-muted hover:text-text-primary",
+                  )}
+                >
+                  {range}
+                </button>
+              );
+            })}
+          </div>
         </div>
-      </div>
+      </header>
 
-      {/* Chart */}
       <div className="min-h-[280px] flex-1 px-4 py-5 sm:px-5 sm:py-6">
         <div
           className="h-56 w-full"
@@ -104,21 +104,6 @@ export const RequestVolumeChart: React.FC<RequestVolumeChartProps> = ({
               data={currentData}
               margin={{ top: 8, right: 8, left: -20, bottom: 0 }}
             >
-              <defs>
-                <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
-                  <stop
-                    offset="0%"
-                    stopColor="var(--color-accent)"
-                    stopOpacity={0.18}
-                  />
-                  <stop
-                    offset="100%"
-                    stopColor="var(--color-accent)"
-                    stopOpacity={0}
-                  />
-                </linearGradient>
-              </defs>
-
               <CartesianGrid
                 stroke="var(--color-border-default)"
                 strokeDasharray="3 3"
@@ -160,7 +145,7 @@ export const RequestVolumeChart: React.FC<RequestVolumeChartProps> = ({
                   const data = payload[0]?.payload as TimeSeriesPoint;
 
                   return (
-                    <div className="w-48 rounded border border-border-default bg-surface p-2.5 shadow-sm">
+                    <div className="w-48 rounded-md border border-border-default bg-surface p-2.5 shadow-sm">
                       <div className="mb-1.5 flex items-center justify-between gap-2 border-b border-border-default pb-1">
                         <span className="font-label-sm font-semibold text-text-primary">
                           {data.date}
@@ -200,7 +185,8 @@ export const RequestVolumeChart: React.FC<RequestVolumeChartProps> = ({
                 dataKey="requests"
                 stroke="var(--color-accent)"
                 strokeWidth={2}
-                fill={`url(#${gradientId})`}
+                fill="var(--color-accent)"
+                fillOpacity={0.08}
                 isAnimationActive={false}
                 activeDot={{
                   r: 4,
@@ -213,19 +199,18 @@ export const RequestVolumeChart: React.FC<RequestVolumeChartProps> = ({
           </ResponsiveContainer>
         </div>
 
-        {/* Peak summary */}
         {!isChartHovered && peakPoint && (
-          <div className="mt-3 flex items-center justify-between gap-3 border-t border-border-default pt-3">
-            <span className="font-label-sm text-text-secondary">
+          <div className="mt-3 flex min-w-0 items-center justify-between gap-3 border-t border-border-default pt-3">
+            <span className="shrink-0 font-label-sm text-text-secondary">
               Peak volume
             </span>
 
-            <div className="flex items-center gap-3">
-              <span className="font-code-inline font-semibold text-text-primary">
+            <div className="flex min-w-0 items-center justify-end gap-3">
+              <span className="truncate font-code-inline font-semibold text-text-primary">
                 {peakPoint.requests.toLocaleString()} reqs
               </span>
 
-              <span className="font-label-sm text-text-secondary">
+              <span className="shrink-0 font-label-sm text-text-secondary">
                 {peakPoint.date}
               </span>
             </div>
@@ -233,8 +218,7 @@ export const RequestVolumeChart: React.FC<RequestVolumeChartProps> = ({
         )}
       </div>
 
-      {/* Breakdown */}
-      <div className="grid shrink-0 grid-cols-1 border-t border-border-default bg-surface-muted/30 sm:grid-cols-3 sm:divide-x sm:divide-border-default">
+      <footer className="grid shrink-0 grid-cols-1 border-t border-border-default bg-surface sm:grid-cols-3 sm:divide-x sm:divide-border-default">
         <div className="flex items-center gap-3 px-4 py-3.5 sm:px-5">
           <span
             className="h-2 w-2 shrink-0 rounded-full bg-success"
@@ -253,7 +237,7 @@ export const RequestVolumeChart: React.FC<RequestVolumeChartProps> = ({
           </div>
         </div>
 
-        <div className="flex items-center gap-3 px-4 py-3.5 sm:px-5">
+        <div className="flex items-center gap-3 border-t border-border-default px-4 py-3.5 sm:border-t-0 sm:px-5">
           <span
             className="h-2 w-2 shrink-0 rounded-full bg-warning"
             aria-hidden="true"
@@ -270,7 +254,7 @@ export const RequestVolumeChart: React.FC<RequestVolumeChartProps> = ({
           </div>
         </div>
 
-        <div className="flex items-center gap-3 px-4 py-3.5 sm:px-5">
+        <div className="flex items-center gap-3 border-t border-border-default px-4 py-3.5 sm:border-t-0 sm:px-5">
           <span
             className="h-2 w-2 shrink-0 rounded-full bg-danger"
             aria-hidden="true"
@@ -286,7 +270,7 @@ export const RequestVolumeChart: React.FC<RequestVolumeChartProps> = ({
             </div>
           </div>
         </div>
-      </div>
+      </footer>
     </section>
   );
 };
