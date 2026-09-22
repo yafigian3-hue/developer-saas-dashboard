@@ -17,34 +17,57 @@ import type { Project } from "./types/project";
 
 export default function App() {
   const [currentPage, setCurrentPage] = useState<NavPage>("overview");
+
   const [projects, setProjects] = useState<Project[]>(mockProjects);
-  const [requests] = useState<ApiRequest[]>(mockRequests);
+  const requests: ApiRequest[] = mockRequests;
   const logs = mockLogs;
 
-  // Selected request for the inspection drawer
   const [selectedRequest, setSelectedRequest] = useState<ApiRequest | null>(
     mockRequests[0] ?? null,
   );
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
-  // Modals
   const [isNewProjectOpen, setIsNewProjectOpen] = useState(false);
   const [isExportOpen, setIsExportOpen] = useState(false);
   const [isDocsOpen, setIsDocsOpen] = useState(false);
 
-  // Search & deep-linking filters
   const [searchQuery, setSearchQuery] = useState("");
   const [logFilter, setLogFilter] = useState("");
   const [requestFilter, setRequestFilter] = useState("");
 
-  const handleSelectRequest = (req: ApiRequest) => {
-    setSelectedRequest(req);
+  const handleNavigate = (page: NavPage) => {
+    setCurrentPage(page);
+    setIsDrawerOpen(false);
+
+    if (page !== "logs") {
+      setLogFilter("");
+    }
+
+    if (page !== "requests") {
+      setRequestFilter("");
+    }
+  };
+
+  const handleSelectRequest = (request: ApiRequest) => {
+    setSelectedRequest(request);
     setIsDrawerOpen(true);
   };
 
-  const handleViewLogsForRequest = (reqId: string) => {
+  const handleOpenDrawer = () => {
+    if (!selectedRequest) {
+      setSelectedRequest(requests[0] ?? null);
+    }
+
+    setIsDrawerOpen(true);
+  };
+
+  const handleCloseDrawer = () => {
     setIsDrawerOpen(false);
-    setLogFilter(reqId);
+  };
+
+  const handleViewLogsForRequest = (requestId: string) => {
+    setIsDrawerOpen(false);
+    setLogFilter(requestId);
     setCurrentPage("logs");
   };
 
@@ -53,59 +76,43 @@ export default function App() {
     setCurrentPage("requests");
   };
 
-  const handleCreateProject = (newProj: Partial<Project>) => {
+  const handleCreateProject = (newProject: Partial<Project>) => {
     const project: Project = {
       id: `proj_${Date.now().toString(36)}`,
-      name: newProj.name || "Untitled Microservice",
-      slug: newProj.slug || "untitled-service",
-      environment: newProj.environment || "production",
-      description: newProj.description || "Microservice gateway endpoint.",
+      name: newProject.name || "Untitled Microservice",
+      slug: newProject.slug || "untitled-service",
+      environment: newProject.environment || "production",
+      description: newProject.description || "Microservice gateway endpoint.",
       status: "healthy",
       requestsTotal: 0,
-      errorRate: 0.0,
+      errorRate: 0,
       avgLatency: 35,
       healthProbesPassing: true,
       activeVersion: "v1.0.0",
       lastDeployed: "Just now",
     };
 
-    setProjects((prev) => [project, ...prev]);
+    setProjects((currentProjects) => [project, ...currentProjects]);
   };
 
-  const filteredRequests = requests.filter((request) => {
-    const query = searchQuery.trim().toLowerCase();
+  const normalizedSearch = searchQuery.trim().toLowerCase();
 
-    if (!query) return true;
-
-    return (
-      request.endpoint.toLowerCase().includes(query) ||
-      request.id.toLowerCase().includes(query) ||
-      request.project.toLowerCase().includes(query) ||
-      request.clientIp.toLowerCase().includes(query)
-    );
-  });
+  const filteredRequests = normalizedSearch
+    ? requests.filter((request) => {
+        return (
+          request.endpoint.toLowerCase().includes(normalizedSearch) ||
+          request.id.toLowerCase().includes(normalizedSearch) ||
+          request.project.toLowerCase().includes(normalizedSearch) ||
+          request.clientIp.toLowerCase().includes(normalizedSearch)
+        );
+      })
+    : requests;
 
   return (
     <AppShell
       currentPage={currentPage}
-      onNavigate={(page) => {
-        setCurrentPage(page);
-
-        if (page !== "logs") {
-          setLogFilter("");
-        }
-
-        if (page !== "requests") {
-          setRequestFilter("");
-        }
-      }}
-      onOpenDrawer={() => {
-        if (!selectedRequest) {
-          setSelectedRequest(requests[0] ?? null);
-        }
-
-        setIsDrawerOpen(true);
-      }}
+      onNavigate={handleNavigate}
+      onOpenDrawer={handleOpenDrawer}
       onOpenDocs={() => setIsDocsOpen(true)}
       onExportReport={() => setIsExportOpen(true)}
       searchQuery={searchQuery}
@@ -117,7 +124,7 @@ export default function App() {
           selectedRequest={selectedRequest}
           onSelectRequest={handleSelectRequest}
           isDrawerOpen={isDrawerOpen}
-          onCloseDrawer={() => setIsDrawerOpen(false)}
+          onCloseDrawer={handleCloseDrawer}
           onViewLogs={handleViewLogsForRequest}
         />
       )}
@@ -136,9 +143,10 @@ export default function App() {
           selectedRequest={selectedRequest}
           onSelectRequest={handleSelectRequest}
           isDrawerOpen={isDrawerOpen}
-          onCloseDrawer={() => setIsDrawerOpen(false)}
+          onCloseDrawer={handleCloseDrawer}
           onViewLogs={handleViewLogsForRequest}
           initialFilter={requestFilter}
+          onExportReport={() => setIsExportOpen(true)}
         />
       )}
 
@@ -148,7 +156,6 @@ export default function App() {
 
       {currentPage === "settings" && <SettingsPage />}
 
-      {/* Global Modals */}
       <NewProjectModal
         isOpen={isNewProjectOpen}
         onClose={() => setIsNewProjectOpen(false)}
