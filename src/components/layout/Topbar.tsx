@@ -1,13 +1,8 @@
 import { useEffect, useRef } from "react";
 import type { FC } from "react";
-import {
-  Bell,
-  Download,
-  Menu,
-  PanelRightOpen,
-  Search,
-  Settings,
-} from "lucide-react";
+import { Download, Menu, PanelRightOpen, Search, Settings } from "lucide-react";
+import { Button } from "../ui/Button";
+import { Input } from "../ui/Input";
 
 export interface TopbarProps {
   onOpenMobileSidebar: () => void;
@@ -44,91 +39,89 @@ export const Topbar: FC<TopbarProps> = ({
     };
 
     window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
   }, []);
 
   const hasContextualActions = Boolean(onOpenDrawer || onExportReport);
 
   return (
-    <header className="fixed inset-x-0 top-0 z-30 flex h-14 items-center gap-3 border-b border-border-default bg-surface px-4 sm:px-6 lg:left-60">
-      <button
-        type="button"
+    <header className="fixed inset-x-0 top-0 z-30 flex h-14 min-w-0 items-center gap-2 border-b border-border-default bg-surface px-3 sm:gap-3 sm:px-4 lg:left-60 lg:px-6">
+      <Button
+        variant="ghost"
+        size="icon"
         onClick={onOpenMobileSidebar}
         aria-label="Open navigation menu"
-        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-border-default text-text-secondary transition-colors duration-150 hover:bg-surface-muted hover:text-text-primary focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent lg:hidden"
+        className="shrink-0 lg:hidden"
       >
-        <Menu className="h-4 w-4" />
-      </button>
+        <Menu className="h-4 w-4" aria-hidden="true" />
+      </Button>
 
-      <div className="relative min-w-0 max-w-2xl flex-1">
-        <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-text-secondary" />
-        <input
+      <div className="min-w-0 flex-1">
+        <Input
           ref={searchInputRef}
+          icon={<Search className="h-3.5 w-3.5" />}
           type="text"
           value={searchQuery}
           onChange={(event) => onSearchChange(event.target.value)}
-          placeholder="Search endpoints, request IDs, IPs, or logs..."
-          aria-label="Search dashboard"
-          className="h-8 w-full rounded-md border border-border-default bg-surface-muted pl-9 pr-9 text-xs text-text-primary placeholder:text-text-secondary transition-colors duration-150 focus:border-accent focus:bg-surface focus:outline-none focus:ring-1 focus:ring-accent"
+          placeholder="Search requests, endpoints, IDs, or IPs..."
+          aria-label="Search requests"
+          rightElement={
+            <kbd className="pointer-events-none hidden rounded border border-border-default bg-surface px-1.5 py-0.5 font-code-inline text-[10px] leading-none text-text-secondary sm:block">
+              /
+            </kbd>
+          }
+          className="w-full"
         />
-        <kbd className="pointer-events-none absolute right-2 top-1/2 hidden -translate-y-1/2 rounded border border-border-default bg-surface px-1.5 py-0.5 font-mono text-[10px] leading-none text-text-secondary sm:block">
-          /
-        </kbd>
       </div>
 
       <div className="ml-auto flex shrink-0 items-center gap-0.5">
         {onOpenDrawer && (
-          <button
-            type="button"
+          <Button
+            variant="ghost"
+            size="icon"
             onClick={onOpenDrawer}
             aria-label="Open inspect drawer"
-            title="Open inspect drawer"
-            className="flex h-8 w-8 items-center justify-center rounded-md text-text-secondary transition-colors duration-150 hover:bg-surface-muted hover:text-text-primary focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent"
+            title="Inspect request"
+            className="shrink-0"
           >
-            <PanelRightOpen className="h-4 w-4" />
-          </button>
+            <PanelRightOpen className="h-4 w-4" aria-hidden="true" />
+          </Button>
         )}
 
         {onExportReport && (
-          <button
-            type="button"
+          <Button
+            variant="ghost"
+            size="icon"
             onClick={onExportReport}
             aria-label="Export report"
             title="Export report"
-            className="flex h-8 w-8 items-center justify-center rounded-md text-text-secondary transition-colors duration-150 hover:bg-surface-muted hover:text-text-primary focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent"
+            className="shrink-0"
           >
-            <Download className="h-4 w-4" />
-          </button>
+            <Download className="h-4 w-4" aria-hidden="true" />
+          </Button>
         )}
 
         {hasContextualActions && (
-          <div className="mx-1 h-4 w-px bg-border-default" aria-hidden="true" />
+          <div
+            className="mx-1 h-4 w-px bg-border-default sm:mx-1.5"
+            aria-hidden="true"
+          />
         )}
 
-        {/* Global actions — always available regardless of page */}
-        <button
-          type="button"
-          aria-label="Notifications"
-          title="Notifications"
-          className="relative flex h-8 w-8 items-center justify-center rounded-md text-text-secondary transition-colors duration-150 hover:bg-surface-muted hover:text-text-primary focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent"
-        >
-          <Bell className="h-4 w-4" />
-          <span
-            aria-hidden="true"
-            className="absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full bg-warning"
-          />
-        </button>
-
         {onOpenSettings && (
-          <button
-            type="button"
+          <Button
+            variant="ghost"
+            size="icon"
             onClick={onOpenSettings}
             aria-label="Open settings"
             title="Settings"
-            className="flex h-8 w-8 items-center justify-center rounded-md text-text-secondary transition-colors duration-150 hover:bg-surface-muted hover:text-text-primary focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent"
+            className="shrink-0"
           >
-            <Settings className="h-4 w-4" />
-          </button>
+            <Settings className="h-4 w-4" aria-hidden="true" />
+          </Button>
         )}
       </div>
     </header>
