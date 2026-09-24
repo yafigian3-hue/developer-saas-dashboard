@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Check, ChevronDown, Copy, Filter, Terminal } from "lucide-react";
 import { PageContainer } from "../components/layout/PageContainer";
 import { Badge } from "../components/ui/Badge";
@@ -24,6 +24,24 @@ const levelFilters: Array<{
   { id: "error", label: "Error" },
 ];
 
+const getStringDetail = (
+  details: LogEntry["details"] | undefined,
+  key: string,
+): string | undefined => {
+  const value = details?.[key];
+
+  return typeof value === "string" ? value : undefined;
+};
+
+const getNumberDetail = (
+  details: LogEntry["details"] | undefined,
+  key: string,
+): number | undefined => {
+  const value = details?.[key];
+
+  return typeof value === "number" ? value : undefined;
+};
+
 export const LogsPage: React.FC<LogsPageProps> = ({
   logs,
   initialSearch = "",
@@ -32,25 +50,42 @@ export const LogsPage: React.FC<LogsPageProps> = ({
   const [levelFilter, setLevelFilter] = useState<LogLevel>("all");
   const [expandedLogId, setExpandedLogId] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const copyTimeoutRef = useRef<number | null>(null);
 
-  const filteredLogs = useMemo(() => {
+  useEffect(() => {
+    setSearch(initialSearch);
+    setExpandedLogId(null);
+  }, [initialSearch]);
+
+  useEffect(() => {
+    return () => {
+      if (copyTimeoutRef.current !== null) {
+        window.clearTimeout(copyTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  const filteredLogs = logs.filter((log) => {
     const query = search.trim().toLowerCase();
 
-    return logs.filter((log) => {
-      if (levelFilter !== "all" && log.level !== levelFilter) {
-        return false;
-      }
+    if (levelFilter !== "all" && log.level !== levelFilter) {
+      return false;
+    }
 
-      if (!query) return true;
+    if (!query) {
+      return true;
+    }
 
-      const matchMessage = log.message.toLowerCase().includes(query);
-      const matchService = log.service.toLowerCase().includes(query);
-      const matchRequestId = log.requestId?.toLowerCase().includes(query);
-      const matchId = log.id.toLowerCase().includes(query);
+    const path = getStringDetail(log.details, "path");
 
-      return matchMessage || matchService || matchRequestId || matchId;
-    });
-  }, [logs, levelFilter, search]);
+    return (
+      log.message.toLowerCase().includes(query) ||
+      log.service.toLowerCase().includes(query) ||
+      log.requestId?.toLowerCase().includes(query) ||
+      log.id.toLowerCase().includes(query) ||
+      path?.toLowerCase().includes(query)
+    );
+  });
 
   const handleLevelChange = (level: LogLevel) => {
     setLevelFilter(level);
@@ -64,13 +99,20 @@ export const LogsPage: React.FC<LogsPageProps> = ({
 
   const handleCopyEventId = async (logId: string) => {
     try {
-      if (!navigator.clipboard) return;
+      if (!navigator.clipboard) {
+        return;
+      }
 
       await navigator.clipboard.writeText(logId);
       setCopiedId(logId);
 
-      window.setTimeout(() => {
+      if (copyTimeoutRef.current !== null) {
+        window.clearTimeout(copyTimeoutRef.current);
+      }
+
+      copyTimeoutRef.current = window.setTimeout(() => {
         setCopiedId((currentId) => (currentId === logId ? null : currentId));
+        copyTimeoutRef.current = null;
       }, 1600);
     } catch {
       setCopiedId(null);
@@ -85,7 +127,9 @@ export const LogsPage: React.FC<LogsPageProps> = ({
     event: React.KeyboardEvent<HTMLDivElement>,
     logId: string,
   ) => {
-    if (event.key !== "Enter" && event.key !== " ") return;
+    if (event.key !== "Enter" && event.key !== " ") {
+      return;
+    }
 
     event.preventDefault();
     handleToggleLog(logId);
@@ -93,13 +137,11 @@ export const LogsPage: React.FC<LogsPageProps> = ({
 
   return (
     <PageContainer>
-      {/* Page header */}
       <header className="@container">
         <div className="flex min-w-0 flex-col gap-4 @xl:flex-row @xl:items-start @xl:justify-between">
-          {/* Page identity */}
           <div className="min-w-0">
             <div className="flex min-w-0 flex-wrap items-center gap-2">
-              <h1 className="text-[24px] font-semibold leading-8 tracking-tight text-text-primary">
+              <h1 className="text-2xl font-semibold leading-8 tracking-tight text-text-primary">
                 System Logs
               </h1>
 
@@ -113,8 +155,7 @@ export const LogsPage: React.FC<LogsPageProps> = ({
             </p>
           </div>
 
-          {/* Search + level filters */}
-          <div className="flex w-full min-w-0 flex-col items-stretch gap-2.5 @xl:w-[340px] @xl:shrink-0">
+          <div className="flex min-w-0 flex-col gap-2.5 @xl:w-[340px] @xl:shrink-0">
             <Input
               icon={<Filter className="h-3.5 w-3.5" />}
               type="text"
@@ -125,8 +166,11 @@ export const LogsPage: React.FC<LogsPageProps> = ({
               className="w-full"
             />
 
-            <div className="flex min-w-0 overflow-x-auto">
-              <div className="flex w-max items-center gap-2">
+            <div className="min-w-0 overflow-x-auto">
+              <div
+                className="flex w-max items-center gap-2"
+                aria-label="Log level filter"
+              >
                 {levelFilters.map((filter) => {
                   const isActive = levelFilter === filter.id;
 
@@ -154,12 +198,10 @@ export const LogsPage: React.FC<LogsPageProps> = ({
         </div>
       </header>
 
-      {/* Log viewer */}
       <section
         aria-label="System log viewer"
         className="min-w-0 overflow-hidden rounded-lg border border-border-default bg-surface"
       >
-        {/* Terminal header */}
         <div className="flex min-w-0 items-center justify-between gap-3 border-b border-border-default bg-surface-muted px-3 py-2.5 sm:px-4">
           <div className="flex min-w-0 items-center gap-2">
             <Terminal
@@ -177,8 +219,7 @@ export const LogsPage: React.FC<LogsPageProps> = ({
           </span>
         </div>
 
-        {/* Log list */}
-        <div className="max-h-[640px] overflow-y-auto">
+        <div className="max-h-[60vh] overflow-y-auto sm:max-h-[640px]">
           {filteredLogs.length > 0 ? (
             <div className="divide-y divide-border-default/60">
               {filteredLogs.map((log) => {
@@ -187,17 +228,22 @@ export const LogsPage: React.FC<LogsPageProps> = ({
                 const isWarn = log.level === "warn";
                 const isCopied = copiedId === log.id;
 
+                const path = getStringDetail(log.details, "path");
+                const clientIp = getStringDetail(log.details, "clientIp");
+                const host = getStringDetail(log.details, "host");
+                const statusCode = getNumberDetail(log.details, "statusCode");
+                const durationMs = getNumberDetail(log.details, "durationMs");
+
                 return (
                   <article
                     key={log.id}
                     className={cn(
                       "min-w-0 transition-colors duration-100",
-                      isError && "bg-danger/[0.025]",
-                      isWarn && "bg-warning/[0.025]",
+                      isError && "bg-danger/5",
+                      isWarn && "bg-warning/5",
                     )}
                   >
-                    {/* Main log row */}
-                    <div className="flex min-w-0 items-start gap-3 px-3 py-3 sm:px-4">
+                    <div className="flex min-w-0 items-start gap-2.5 px-3 py-3 sm:gap-3 sm:px-4">
                       <button
                         type="button"
                         onClick={() => handleToggleLog(log.id)}
@@ -223,7 +269,7 @@ export const LogsPage: React.FC<LogsPageProps> = ({
                         tabIndex={0}
                         onClick={() => handleToggleLog(log.id)}
                         onKeyDown={(event) => handleLogKeyDown(event, log.id)}
-                        className="min-w-0 flex-1 cursor-pointer outline-none"
+                        className="min-w-0 flex-1 cursor-pointer rounded-sm outline-none focus-visible:ring-1 focus-visible:ring-accent focus-visible:ring-offset-2"
                       >
                         <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1.5">
                           <span className="shrink-0 font-code-inline text-[11px] text-text-secondary">
@@ -287,9 +333,8 @@ export const LogsPage: React.FC<LogsPageProps> = ({
                       </Button>
                     </div>
 
-                    {/* Expanded details */}
                     {isExpanded && (
-                      <div className="border-t border-border-default/60 bg-surface-muted/60 px-3 py-3 sm:px-4 sm:pl-16">
+                      <div className="border-t border-border-default/60 bg-surface-muted/50 px-3 py-3 sm:px-4 sm:pl-16">
                         <dl className="grid min-w-0 gap-x-6 gap-y-3 sm:grid-cols-2">
                           <div className="min-w-0">
                             <dt className="font-label-sm text-text-secondary">
@@ -326,9 +371,73 @@ export const LogsPage: React.FC<LogsPageProps> = ({
                               {log.requestId || "—"}
                             </dd>
                           </div>
+
+                          {path && (
+                            <div className="min-w-0">
+                              <dt className="font-label-sm text-text-secondary">
+                                Path
+                              </dt>
+                              <dd className="mt-1 break-all font-code-inline text-[11px] text-text-primary">
+                                {path}
+                              </dd>
+                            </div>
+                          )}
+
+                          {statusCode !== undefined && (
+                            <div className="min-w-0">
+                              <dt className="font-label-sm text-text-secondary">
+                                Status Code
+                              </dt>
+                              <dd
+                                className={cn(
+                                  "mt-1 font-code-inline text-[11px] font-medium",
+                                  statusCode >= 500
+                                    ? "text-danger"
+                                    : statusCode >= 400
+                                      ? "text-warning"
+                                      : "text-success",
+                                )}
+                              >
+                                {statusCode}
+                              </dd>
+                            </div>
+                          )}
+
+                          {durationMs !== undefined && (
+                            <div className="min-w-0">
+                              <dt className="font-label-sm text-text-secondary">
+                                Duration
+                              </dt>
+                              <dd className="mt-1 font-code-inline text-[11px] text-text-primary">
+                                {durationMs.toLocaleString()}ms
+                              </dd>
+                            </div>
+                          )}
+
+                          {clientIp && (
+                            <div className="min-w-0">
+                              <dt className="font-label-sm text-text-secondary">
+                                Client IP
+                              </dt>
+                              <dd className="mt-1 break-all font-code-inline text-[11px] text-text-primary">
+                                {clientIp}
+                              </dd>
+                            </div>
+                          )}
+
+                          {host && (
+                            <div className="min-w-0">
+                              <dt className="font-label-sm text-text-secondary">
+                                Host
+                              </dt>
+                              <dd className="mt-1 break-all font-code-inline text-[11px] text-text-primary">
+                                {host}
+                              </dd>
+                            </div>
+                          )}
                         </dl>
 
-                        <div className="mt-3 border-t border-border-default/60 pt-3">
+                        <div className="mt-4 border-t border-border-default/60 pt-3">
                           <div className="font-label-sm text-text-secondary">
                             Message
                           </div>
