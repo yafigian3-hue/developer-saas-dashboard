@@ -1,5 +1,13 @@
 export type LogLevel = "info" | "warn" | "error" | "debug";
 
+export interface LogDetails {
+  clientIp?: string;
+  path?: string;
+  statusCode?: number;
+  durationMs?: number;
+  host?: string;
+}
+
 export interface LogEntry {
   id: string;
   timestamp: string;
@@ -7,5 +15,5 @@ export interface LogEntry {
   service: string;
   requestId?: string;
   message: string;
-  details?: Record<string, unknown>;
+  details?: LogDetails;
 }
