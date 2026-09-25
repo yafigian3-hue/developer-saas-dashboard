@@ -11,6 +11,7 @@ interface RecentRequestsTableProps {
   selectedRequestId?: string;
   onSelectRequest: (request: ApiRequest) => void;
   filterPathInitial?: string;
+  onFilteredRequestsChange?: (requests: ApiRequest[]) => void;
 }
 
 type StatusFilter = "all" | "2xx" | "4xx" | "5xx";
@@ -32,6 +33,7 @@ export const RecentRequestsTable: React.FC<RecentRequestsTableProps> = ({
   selectedRequestId,
   onSelectRequest,
   filterPathInitial = "",
+  onFilteredRequestsChange,
 }) => {
   const [activeFilter, setActiveFilter] = useState<StatusFilter>("all");
   const [pathFilter, setPathFilter] = useState(filterPathInitial);
@@ -59,6 +61,10 @@ export const RecentRequestsTable: React.FC<RecentRequestsTableProps> = ({
       );
     });
   }, [requests, activeFilter, pathFilter]);
+
+  useEffect(() => {
+    onFilteredRequestsChange?.(filteredRequests);
+  }, [filteredRequests, onFilteredRequestsChange]);
 
   const totalPages = Math.max(
     1,

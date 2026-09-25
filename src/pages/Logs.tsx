@@ -24,24 +24,6 @@ const levelFilters: Array<{
   { id: "error", label: "Error" },
 ];
 
-const getStringDetail = (
-  details: LogEntry["details"] | undefined,
-  key: string,
-): string | undefined => {
-  const value = details?.[key];
-
-  return typeof value === "string" ? value : undefined;
-};
-
-const getNumberDetail = (
-  details: LogEntry["details"] | undefined,
-  key: string,
-): number | undefined => {
-  const value = details?.[key];
-
-  return typeof value === "number" ? value : undefined;
-};
-
 export const LogsPage: React.FC<LogsPageProps> = ({
   logs,
   initialSearch = "",
@@ -65,9 +47,9 @@ export const LogsPage: React.FC<LogsPageProps> = ({
     };
   }, []);
 
-  const filteredLogs = logs.filter((log) => {
-    const query = search.trim().toLowerCase();
+  const query = search.trim().toLowerCase();
 
+  const filteredLogs = logs.filter((log) => {
     if (levelFilter !== "all" && log.level !== levelFilter) {
       return false;
     }
@@ -76,14 +58,14 @@ export const LogsPage: React.FC<LogsPageProps> = ({
       return true;
     }
 
-    const path = getStringDetail(log.details, "path");
-
     return (
       log.message.toLowerCase().includes(query) ||
       log.service.toLowerCase().includes(query) ||
       log.requestId?.toLowerCase().includes(query) ||
       log.id.toLowerCase().includes(query) ||
-      path?.toLowerCase().includes(query)
+      log.details?.path?.toLowerCase().includes(query) ||
+      log.details?.clientIp?.toLowerCase().includes(query) ||
+      log.details?.host?.toLowerCase().includes(query)
     );
   });
 
@@ -228,12 +210,6 @@ export const LogsPage: React.FC<LogsPageProps> = ({
                 const isWarn = log.level === "warn";
                 const isCopied = copiedId === log.id;
 
-                const path = getStringDetail(log.details, "path");
-                const clientIp = getStringDetail(log.details, "clientIp");
-                const host = getStringDetail(log.details, "host");
-                const statusCode = getNumberDetail(log.details, "statusCode");
-                const durationMs = getNumberDetail(log.details, "durationMs");
-
                 return (
                   <article
                     key={log.id}
@@ -372,18 +348,18 @@ export const LogsPage: React.FC<LogsPageProps> = ({
                             </dd>
                           </div>
 
-                          {path && (
+                          {log.details?.path && (
                             <div className="min-w-0">
                               <dt className="font-label-sm text-text-secondary">
                                 Path
                               </dt>
                               <dd className="mt-1 break-all font-code-inline text-[11px] text-text-primary">
-                                {path}
+                                {log.details.path}
                               </dd>
                             </div>
                           )}
 
-                          {statusCode !== undefined && (
+                          {log.details?.statusCode !== undefined && (
                             <div className="min-w-0">
                               <dt className="font-label-sm text-text-secondary">
                                 Status Code
@@ -391,47 +367,47 @@ export const LogsPage: React.FC<LogsPageProps> = ({
                               <dd
                                 className={cn(
                                   "mt-1 font-code-inline text-[11px] font-medium",
-                                  statusCode >= 500
+                                  log.details.statusCode >= 500
                                     ? "text-danger"
-                                    : statusCode >= 400
+                                    : log.details.statusCode >= 400
                                       ? "text-warning"
                                       : "text-success",
                                 )}
                               >
-                                {statusCode}
+                                {log.details.statusCode}
                               </dd>
                             </div>
                           )}
 
-                          {durationMs !== undefined && (
+                          {log.details?.durationMs !== undefined && (
                             <div className="min-w-0">
                               <dt className="font-label-sm text-text-secondary">
                                 Duration
                               </dt>
                               <dd className="mt-1 font-code-inline text-[11px] text-text-primary">
-                                {durationMs.toLocaleString()}ms
+                                {log.details.durationMs.toLocaleString()}ms
                               </dd>
                             </div>
                           )}
 
-                          {clientIp && (
+                          {log.details?.clientIp && (
                             <div className="min-w-0">
                               <dt className="font-label-sm text-text-secondary">
                                 Client IP
                               </dt>
                               <dd className="mt-1 break-all font-code-inline text-[11px] text-text-primary">
-                                {clientIp}
+                                {log.details.clientIp}
                               </dd>
                             </div>
                           )}
 
-                          {host && (
+                          {log.details?.host && (
                             <div className="min-w-0">
                               <dt className="font-label-sm text-text-secondary">
                                 Host
                               </dt>
                               <dd className="mt-1 break-all font-code-inline text-[11px] text-text-primary">
-                                {host}
+                                {log.details.host}
                               </dd>
                             </div>
                           )}

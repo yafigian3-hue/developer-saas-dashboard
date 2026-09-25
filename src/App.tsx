@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useCallback, useState } from "react";
 import { AppShell } from "./components/layout/AppShell";
 import type { NavPage } from "./components/layout/Sidebar";
 import { OverviewPage } from "./pages/Overview";
@@ -34,6 +34,9 @@ export default function App() {
   const [searchQuery, setSearchQuery] = useState("");
   const [logFilter, setLogFilter] = useState("");
   const [requestFilter, setRequestFilter] = useState("");
+
+  const [exportRequests, setExportRequests] =
+    useState<ApiRequest[]>(mockRequests);
 
   const handleNavigate = (page: NavPage) => {
     setCurrentPage(page);
@@ -76,6 +79,10 @@ export default function App() {
     setCurrentPage("requests");
   };
 
+  const handleFilteredRequestsChange = useCallback((filtered: ApiRequest[]) => {
+    setExportRequests(filtered);
+  }, []);
+
   const handleCreateProject = (newProject: Partial<Project>) => {
     const project: Project = {
       id: `proj_${Date.now().toString(36)}`,
@@ -107,6 +114,9 @@ export default function App() {
         );
       })
     : requests;
+
+  const requestsToExport =
+    currentPage === "requests" ? exportRequests : filteredRequests;
 
   return (
     <AppShell
@@ -147,6 +157,7 @@ export default function App() {
           onViewLogs={handleViewLogsForRequest}
           initialFilter={requestFilter}
           onExportReport={() => setIsExportOpen(true)}
+          onFilteredRequestsChange={handleFilteredRequestsChange}
         />
       )}
 
@@ -165,7 +176,7 @@ export default function App() {
       <ExportModal
         isOpen={isExportOpen}
         onClose={() => setIsExportOpen(false)}
-        requests={requests}
+        requests={requestsToExport}
       />
 
       <DocsModal isOpen={isDocsOpen} onClose={() => setIsDocsOpen(false)} />

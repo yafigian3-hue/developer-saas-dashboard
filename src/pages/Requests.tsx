@@ -15,6 +15,7 @@ export interface RequestsPageProps {
   onCloseDrawer: () => void;
   onViewLogs: (reqId: string) => void;
   onExportReport: () => void;
+  onFilteredRequestsChange?: (requests: ApiRequest[]) => void;
   initialFilter?: string;
 }
 
@@ -26,6 +27,7 @@ export const RequestsPage: React.FC<RequestsPageProps> = ({
   onCloseDrawer,
   onViewLogs,
   onExportReport,
+  onFilteredRequestsChange,
   initialFilter = "",
 }) => {
   return (
@@ -67,6 +69,7 @@ export const RequestsPage: React.FC<RequestsPageProps> = ({
           selectedRequestId={selectedRequest?.id}
           onSelectRequest={onSelectRequest}
           filterPathInitial={initialFilter}
+          onFilteredRequestsChange={onFilteredRequestsChange}
         />
       </div>
 
