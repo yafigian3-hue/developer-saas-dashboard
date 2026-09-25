@@ -11,7 +11,7 @@ interface ExportModalProps {
   requests?: ApiRequest[];
 }
 
-type ExportFormat = "csv" | "json" | "pdf";
+type ExportFormat = "csv" | "json" | "print";
 
 const EXPORT_COLUMNS = [
   { key: "time", label: "Timestamp" },
@@ -41,9 +41,9 @@ const formatOptions: Array<{
     icon: FileJson,
   },
   {
-    id: "pdf",
-    label: "PDF",
-    description: "Best for sharing",
+    id: "print",
+    label: "Print / Save as PDF",
+    description: "Open a printable report",
     icon: FileText,
   },
 ];
@@ -344,7 +344,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
   requests = [],
 }) => {
   const [format, setFormat] = useState<ExportFormat>("csv");
-  const [downloaded, setDownloaded] = useState(false);
+  const [completed, setCompleted] = useState(false);
   const [error, setError] = useState("");
   const closeTimeoutRef = useRef<number | null>(null);
 
@@ -355,7 +355,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
     if (!isOpen) return;
 
     setFormat("csv");
-    setDownloaded(false);
+    setCompleted(false);
     setError("");
   }, [isOpen]);
 
@@ -373,12 +373,12 @@ export const ExportModal: React.FC<ExportModalProps> = ({
       closeTimeoutRef.current = null;
     }
 
-    setDownloaded(false);
+    setCompleted(false);
     setError("");
     onClose();
   };
 
-  const handleDownload = () => {
+  const handleExport = () => {
     if (!hasRequests) return;
 
     setError("");
@@ -408,25 +408,27 @@ export const ExportModal: React.FC<ExportModalProps> = ({
       }
     }
 
-    setDownloaded(true);
+    setCompleted(true);
 
     if (closeTimeoutRef.current !== null) {
       window.clearTimeout(closeTimeoutRef.current);
     }
 
     closeTimeoutRef.current = window.setTimeout(() => {
-      setDownloaded(false);
+      setCompleted(false);
       closeTimeoutRef.current = null;
       onClose();
     }, 1200);
   };
+
+  const completionLabel = format === "print" ? "Opened" : "Exported";
 
   return (
     <Modal
       isOpen={isOpen}
       onClose={handleClose}
       title="Request report"
-      description="Choose how you'd like to download your request data."
+      description="Choose how you'd like to export your request data."
       footer={
         <div className="flex w-full flex-col-reverse gap-2 sm:flex-row sm:items-center sm:justify-end">
           <Button
@@ -441,19 +443,23 @@ export const ExportModal: React.FC<ExportModalProps> = ({
           <Button
             variant="primary"
             size="sm"
-            onClick={handleDownload}
-            disabled={!hasRequests || downloaded}
+            onClick={handleExport}
+            disabled={!hasRequests || completed}
             className="w-full sm:w-auto"
           >
-            {downloaded ? (
+            {completed ? (
               <>
                 <Check className="h-3.5 w-3.5" aria-hidden="true" />
-                <span>Exported</span>
+                <span>{completionLabel}</span>
               </>
             ) : (
               <>
                 <Download className="h-3.5 w-3.5" aria-hidden="true" />
-                <span>Export {selectedOption?.label ?? "Report"}</span>
+                <span>
+                  {format === "print"
+                    ? "Print Report"
+                    : `Export ${selectedOption?.label ?? "Report"}`}
+                </span>
               </>
             )}
           </Button>
@@ -467,7 +473,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
               id="export-format"
               className="font-label-sm font-semibold uppercase tracking-[0.08em] text-text-secondary"
             >
-              File format
+              Export format
             </h3>
           </div>
 
@@ -519,14 +525,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
                       {option.label}
                     </span>
 
-                    <span
-                      className={cn(
-                        "mt-0.5 block truncate text-[10px] leading-4",
-                        isSelected
-                          ? "text-text-secondary"
-                          : "text-text-secondary",
-                      )}
-                    >
+                    <span className="mt-0.5 block truncate text-[10px] leading-4 text-text-secondary">
                       {option.description}
                     </span>
                   </span>
