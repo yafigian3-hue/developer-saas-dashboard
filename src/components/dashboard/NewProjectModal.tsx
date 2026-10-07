@@ -24,7 +24,7 @@ const environmentOptions = [
   },
   {
     value: "eu-production",
-    label: "Production",
+    label: "EU Production",
     region: "eu-central-1",
   },
 ] as const;
@@ -37,6 +37,8 @@ const createSlug = (value: string): string =>
     .replace(/\s+/g, "-")
     .replace(/-+/g, "-");
 
+type ErrorField = "name" | "slug" | null;
+
 export const NewProjectModal: React.FC<NewProjectModalProps> = ({
   isOpen,
   onClose,
@@ -48,6 +50,7 @@ export const NewProjectModal: React.FC<NewProjectModalProps> = ({
   const [description, setDescription] = useState("");
   const [slugManuallyEdited, setSlugManuallyEdited] = useState(false);
   const [error, setError] = useState("");
+  const [errorField, setErrorField] = useState<ErrorField>(null);
 
   useEffect(() => {
     if (isOpen) return;
@@ -58,11 +61,17 @@ export const NewProjectModal: React.FC<NewProjectModalProps> = ({
     setDescription("");
     setSlugManuallyEdited(false);
     setError("");
+    setErrorField(null);
   }, [isOpen]);
+
+  const clearError = () => {
+    setError("");
+    setErrorField(null);
+  };
 
   const handleNameChange = (value: string) => {
     setName(value);
-    setError("");
+    clearError();
 
     if (!slugManuallyEdited) {
       setSlug(createSlug(value));
@@ -72,7 +81,7 @@ export const NewProjectModal: React.FC<NewProjectModalProps> = ({
   const handleSlugChange = (value: string) => {
     setSlugManuallyEdited(true);
     setSlug(createSlug(value));
-    setError("");
+    clearError();
   };
 
   const handleCreate = () => {
@@ -81,11 +90,13 @@ export const NewProjectModal: React.FC<NewProjectModalProps> = ({
 
     if (!trimmedName) {
       setError("Project name is required.");
+      setErrorField("name");
       return;
     }
 
     if (!generatedSlug) {
-      setError("Enter a valid endpoint slug.");
+      setError("Enter a valid project slug.");
+      setErrorField("slug");
       return;
     }
 
@@ -103,6 +114,9 @@ export const NewProjectModal: React.FC<NewProjectModalProps> = ({
     event.preventDefault();
     handleCreate();
   };
+
+  const nameHasError = errorField === "name";
+  const slugHasError = errorField === "slug";
 
   return (
     <Modal
@@ -123,7 +137,6 @@ export const NewProjectModal: React.FC<NewProjectModalProps> = ({
       }
     >
       <form id="new-project-form" onSubmit={handleSubmit} className="space-y-4">
-        {/* Project name */}
         <div>
           <label
             htmlFor="project-name"
@@ -138,8 +151,10 @@ export const NewProjectModal: React.FC<NewProjectModalProps> = ({
             value={name}
             onChange={(event) => handleNameChange(event.target.value)}
             placeholder="e.g. Billing Microservice"
-            aria-describedby="project-name-help project-form-error"
-            aria-invalid={Boolean(error)}
+            aria-describedby={`project-name-help${
+              nameHasError ? " project-form-error" : ""
+            }`}
+            aria-invalid={nameHasError}
           />
 
           <p
@@ -150,7 +165,6 @@ export const NewProjectModal: React.FC<NewProjectModalProps> = ({
           </p>
         </div>
 
-        {/* Endpoint slug */}
         <div>
           <label
             htmlFor="project-slug"
@@ -166,8 +180,10 @@ export const NewProjectModal: React.FC<NewProjectModalProps> = ({
             onChange={(event) => handleSlugChange(event.target.value)}
             placeholder="billing-svc"
             className="font-code-inline"
-            aria-describedby="project-slug-help project-form-error"
-            aria-invalid={Boolean(error)}
+            aria-describedby={`project-slug-help${
+              slugHasError ? " project-form-error" : ""
+            }`}
+            aria-invalid={slugHasError}
           />
 
           <p
@@ -178,7 +194,6 @@ export const NewProjectModal: React.FC<NewProjectModalProps> = ({
           </p>
         </div>
 
-        {/* Environment */}
         <div>
           <label
             htmlFor="project-environment"
@@ -205,7 +220,6 @@ export const NewProjectModal: React.FC<NewProjectModalProps> = ({
           </select>
         </div>
 
-        {/* Description */}
         <div>
           <label
             htmlFor="project-description"
@@ -220,7 +234,7 @@ export const NewProjectModal: React.FC<NewProjectModalProps> = ({
             value={description}
             onChange={(event) => {
               setDescription(event.target.value);
-              setError("");
+              clearError();
             }}
             placeholder="Brief description of this API service..."
             className={cn(
@@ -236,7 +250,6 @@ export const NewProjectModal: React.FC<NewProjectModalProps> = ({
           </p>
         </div>
 
-        {/* Validation message */}
         {error && (
           <div
             id="project-form-error"
