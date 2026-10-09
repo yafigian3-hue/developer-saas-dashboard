@@ -1,11 +1,5 @@
-import React, { useEffect, useRef, useState } from "react";
-import {
-  Calendar,
-  Check,
-  ChevronDown,
-  ChevronsUpDown,
-  RefreshCw,
-} from "lucide-react";
+import type { FC } from "react";
+import { CalendarDays, ChevronDown } from "lucide-react";
 import { cn } from "../../lib/utils";
 
 export interface PageHeaderProps {
@@ -17,20 +11,23 @@ export interface PageHeaderProps {
   onToggleLiveSync: () => void;
 }
 
-const dateOptions = [
-  { label: "Today (24h)", range: "24h", display: "Today (Last 24h)" },
-  { label: "Last 7 Days", range: "7d", display: "Jan 24, 2025 – Feb 1, 2025" },
-  { label: "Last 30 Days", range: "30d", display: "Jan 1, 2025 – Feb 1, 2025" },
-  { label: "Last 90 Days", range: "90d", display: "Nov 1, 2024 – Feb 1, 2025" },
+const ENVIRONMENTS = [
+  "prod-cluster-01",
+  "staging-cluster-01",
+  "dev-sandbox",
 ] as const;
 
-const envOptions = [
-  { label: "prod-cluster-01", status: "healthy", region: "us-east-1" },
-  { label: "prod-cluster-02", status: "healthy", region: "eu-central-1" },
-  { label: "staging-cluster-01", status: "degraded", region: "us-west-2" },
+const DATE_RANGES = [
+  { value: "24h", label: "Last 24 hours" },
+  { value: "7d", label: "Last 7 days" },
+  { value: "30d", label: "Last 30 days" },
+  { value: "90d", label: "Last 90 days" },
 ] as const;
 
-export const PageHeader: React.FC<PageHeaderProps> = ({
+const controlBase =
+  "inline-flex h-9 items-center rounded-md border border-border-default bg-surface text-[12.5px] text-text-primary transition-colors duration-150 hover:border-text-secondary/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent sm:h-8";
+
+export const PageHeader: FC<PageHeaderProps> = ({
   dateRange,
   onDateRangeChange,
   environment,
@@ -38,257 +35,95 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
   isLiveSyncing,
   onToggleLiveSync,
 }) => {
-  const [dateMenuOpen, setDateMenuOpen] = useState(false);
-  const [envMenuOpen, setEnvMenuOpen] = useState(false);
-
-  const dateRef = useRef<HTMLDivElement>(null);
-  const envRef = useRef<HTMLDivElement>(null);
-
-  const selectedDate =
-    dateOptions.find((option) => option.range === dateRange) ?? dateOptions[2];
-
-  const selectedEnvironment =
-    envOptions.find((option) => option.label === environment) ?? envOptions[0];
-
-  useEffect(() => {
-    if (!dateMenuOpen && !envMenuOpen) return;
-
-    const handlePointerDown = (event: PointerEvent) => {
-      const target = event.target as Node;
-      if (dateRef.current && !dateRef.current.contains(target)) {
-        setDateMenuOpen(false);
-      }
-      if (envRef.current && !envRef.current.contains(target)) {
-        setEnvMenuOpen(false);
-      }
-    };
-
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        setDateMenuOpen(false);
-        setEnvMenuOpen(false);
-      }
-    };
-
-    document.addEventListener("pointerdown", handlePointerDown);
-    document.addEventListener("keydown", handleKeyDown);
-    return () => {
-      document.removeEventListener("pointerdown", handlePointerDown);
-      document.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [dateMenuOpen, envMenuOpen]);
-
-  const toggleDateMenu = () => {
-    setDateMenuOpen((open) => !open);
-    setEnvMenuOpen(false);
-  };
-
-  const toggleEnvMenu = () => {
-    setEnvMenuOpen((open) => !open);
-    setDateMenuOpen(false);
-  };
-
   return (
-    <header className="flex flex-wrap items-start justify-between gap-x-4 gap-y-3">
-      {/* Page identity */}
-      <div className="min-w-0 flex-1">
-        <h1 className="text-[20px] font-semibold leading-7 tracking-tight text-text-primary">
+    <header className="flex min-w-0 flex-col gap-4 lg:flex-row lg:items-center lg:justify-between lg:gap-6">
+      <div className="min-w-0">
+        <h1 className="text-[27px] font-semibold leading-tight tracking-[-0.035em] text-text-primary sm:text-[30px]">
           Overview
         </h1>
-        <p className="mt-0.5 truncate text-[12px] leading-4 text-text-secondary">
-          Monitor your API activity, gateway latency, and operational health.
-        </p>
       </div>
 
-      {/* Controls */}
-      <div className="flex min-w-0 flex-row flex-wrap items-center gap-1.5">
-        {/* Date selector */}
-        <div ref={dateRef} className="relative min-w-0 max-w-full">
-          <button
-            type="button"
-            aria-haspopup="listbox"
-            aria-expanded={dateMenuOpen}
-            aria-controls="page-header-date-menu"
-            onClick={toggleDateMenu}
+      <div className="flex min-w-0 flex-wrap items-center gap-2">
+        {/* Environment */}
+        <div className="relative min-w-0 flex-1 sm:flex-none">
+          <span
+            className="pointer-events-none absolute left-3 top-1/2 h-1.5 w-1.5 -translate-y-1/2 rounded-full bg-success"
+            aria-hidden="true"
+          />
+
+          <select
+            value={environment}
+            onChange={(event) => onEnvironmentChange(event.target.value)}
+            aria-label="Environment"
             className={cn(
-              "flex h-7 min-w-0 max-w-full items-center gap-1.5 rounded border border-border-default bg-surface px-2.5 text-text-primary transition-colors duration-150",
-              "hover:bg-surface-muted",
-              "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent",
-              dateMenuOpen && "border-accent",
+              controlBase,
+              "w-full min-w-0 cursor-pointer appearance-none pl-6 pr-8 font-mono text-[11.5px] sm:min-w-[164px]",
             )}
           >
-            <Calendar className="h-3.5 w-3.5 shrink-0 text-text-secondary" />
-            <span className="truncate font-label-sm">
-              {selectedDate.display}
-            </span>
-            <span className="shrink-0 rounded border border-border-default bg-surface-muted px-1 py-0.5 font-label-sm text-text-secondary">
-              {selectedDate.range}
-            </span>
-            <ChevronDown
-              className={cn(
-                "h-3.5 w-3.5 shrink-0 text-text-secondary transition-transform duration-150",
-                dateMenuOpen && "rotate-180",
-              )}
-            />
-          </button>
+            {ENVIRONMENTS.map((env) => (
+              <option key={env} value={env}>
+                {env}
+              </option>
+            ))}
+          </select>
 
-          {dateMenuOpen && (
-            <div
-              id="page-header-date-menu"
-              role="listbox"
-              aria-label="Date range"
-              className="absolute right-0 z-40 mt-1.5 w-[min(18rem,calc(100vw-2rem))] overflow-hidden rounded border border-border-default bg-surface py-1 shadow-sm"
-            >
-              {dateOptions.map((option) => {
-                const isSelected = option.range === dateRange;
-                return (
-                  <button
-                    key={option.range}
-                    type="button"
-                    role="option"
-                    aria-selected={isSelected}
-                    onClick={() => {
-                      onDateRangeChange(option.range);
-                      setDateMenuOpen(false);
-                    }}
-                    className={cn(
-                      "flex w-full items-center justify-between gap-3 px-3 py-2 text-left transition-colors duration-100 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-accent",
-                      isSelected
-                        ? "bg-accent-soft text-accent"
-                        : "text-text-primary hover:bg-surface-muted",
-                    )}
-                  >
-                    <span className="min-w-0">
-                      <span className="block truncate text-[12px] font-medium">
-                        {option.label}
-                      </span>
-                      <span className="mt-0.5 block truncate font-label-sm text-text-secondary">
-                        {option.display}
-                      </span>
-                    </span>
-                    {isSelected && (
-                      <Check
-                        className="h-4 w-4 shrink-0 text-accent"
-                        aria-hidden="true"
-                      />
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-          )}
+          <ChevronDown
+            className="pointer-events-none absolute right-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-text-secondary/60"
+            aria-hidden="true"
+          />
         </div>
 
-        {/* Environment selector */}
-        <div ref={envRef} className="relative min-w-0 max-w-full">
-          <button
-            type="button"
-            aria-haspopup="listbox"
-            aria-expanded={envMenuOpen}
-            aria-controls="page-header-environment-menu"
-            onClick={toggleEnvMenu}
+        {/* Date range */}
+        <div className="relative min-w-0 flex-1 sm:flex-none">
+          <CalendarDays
+            className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-text-secondary"
+            aria-hidden="true"
+          />
+
+          <select
+            value={dateRange}
+            onChange={(event) => onDateRangeChange(event.target.value)}
+            aria-label="Date range"
             className={cn(
-              "flex h-7 min-w-0 max-w-full items-center gap-1.5 rounded border border-border-default bg-surface px-2.5 text-text-primary transition-colors duration-150",
-              "hover:bg-surface-muted",
-              "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent",
-              envMenuOpen && "border-accent",
+              controlBase,
+              "w-full min-w-0 cursor-pointer appearance-none pl-8 pr-8 sm:min-w-[140px]",
             )}
           >
-            <span
-              className={cn(
-                "h-1.5 w-1.5 shrink-0 rounded-full",
-                selectedEnvironment.status === "healthy"
-                  ? "bg-success"
-                  : "bg-warning",
-              )}
-              aria-hidden="true"
-            />
-            <span className="truncate font-label-sm font-medium">
-              {selectedEnvironment.label}
-            </span>
-            <ChevronsUpDown className="h-3.5 w-3.5 shrink-0 text-text-secondary" />
-          </button>
+            {DATE_RANGES.map((range) => (
+              <option key={range.value} value={range.value}>
+                {range.label}
+              </option>
+            ))}
+          </select>
 
-          {envMenuOpen && (
-            <div
-              id="page-header-environment-menu"
-              role="listbox"
-              aria-label="Environment"
-              className="absolute right-0 z-40 mt-1.5 w-[min(16rem,calc(100vw-2rem))] overflow-hidden rounded border border-border-default bg-surface py-1 shadow-sm"
-            >
-              {envOptions.map((option) => {
-                const isSelected = option.label === environment;
-                const isHealthy = option.status === "healthy";
-                return (
-                  <button
-                    key={option.label}
-                    type="button"
-                    role="option"
-                    aria-selected={isSelected}
-                    onClick={() => {
-                      onEnvironmentChange(option.label);
-                      setEnvMenuOpen(false);
-                    }}
-                    className={cn(
-                      "flex w-full items-center justify-between gap-3 px-3 py-2 text-left transition-colors duration-100 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-accent",
-                      isSelected
-                        ? "bg-accent-soft text-accent"
-                        : "text-text-primary hover:bg-surface-muted",
-                    )}
-                  >
-                    <span className="flex min-w-0 items-center gap-2">
-                      <span
-                        className={cn(
-                          "h-1.5 w-1.5 shrink-0 rounded-full",
-                          isHealthy ? "bg-success" : "bg-warning",
-                        )}
-                        aria-hidden="true"
-                      />
-                      <span className="truncate text-[12px] font-medium">
-                        {option.label}
-                      </span>
-                    </span>
-                    <span className="flex shrink-0 items-center gap-2">
-                      <span
-                        className={cn(
-                          "font-label-sm",
-                          isHealthy ? "text-success" : "text-warning",
-                        )}
-                      >
-                        {option.region}
-                      </span>
-                      {isSelected && (
-                        <Check
-                          className="h-4 w-4 text-accent"
-                          aria-hidden="true"
-                        />
-                      )}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          )}
+          <ChevronDown
+            className="pointer-events-none absolute right-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-text-secondary/60"
+            aria-hidden="true"
+          />
         </div>
 
-        {/* Live Sync */}
+        {/* Live sync */}
         <button
           type="button"
           onClick={onToggleLiveSync}
           aria-pressed={isLiveSyncing}
+          title={isLiveSyncing ? "Live sync enabled" : "Live sync disabled"}
           className={cn(
-            "flex h-7 shrink-0 items-center justify-center gap-1.5 rounded border px-2.5 font-label-sm font-medium transition-colors duration-150",
-            "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent",
+            controlBase,
+            "shrink-0 gap-2 px-3",
             isLiveSyncing
-              ? "border-success/30 bg-success/10 text-success"
-              : "border-border-default bg-surface text-text-primary hover:bg-surface-muted",
+              ? "border-accent/30 bg-accent-soft text-accent"
+              : "text-text-secondary hover:text-text-primary",
           )}
         >
-          <RefreshCw
-            className={cn("h-3.5 w-3.5", isLiveSyncing && "animate-spin")}
+          <span
+            className={cn(
+              "h-1.5 w-1.5 shrink-0 rounded-full",
+              isLiveSyncing ? "bg-success" : "bg-text-secondary/50",
+            )}
             aria-hidden="true"
           />
-          <span>{isLiveSyncing ? "Syncing..." : "Live Sync"}</span>
+          <span>Live sync</span>
         </button>
       </div>
     </header>
