@@ -1,113 +1,105 @@
 import React from "react";
-import { AlertTriangle } from "lucide-react";
 import { endpointErrors } from "../../data/dashboard";
 import { cn } from "../../lib/utils";
-import { Button } from "../ui/Button";
 
 interface ErrorsByEndpointProps {
-  onInspectTrace: () => void;
-  onSelectEndpoint?: (path: string) => void;
+  onInspectTrace: (endpointPath?: string) => void;
 }
+
+const clamp = (value: number) => Math.min(Math.max(value, 0), 100);
 
 export const ErrorsByEndpoint: React.FC<ErrorsByEndpointProps> = ({
   onInspectTrace,
-  onSelectEndpoint,
 }) => {
-  return (
-    <section className="flex h-full min-w-0 flex-col rounded-lg border border-border-default bg-surface p-4 sm:p-5">
-      <div className="min-w-0 flex-1">
-        <header className="mb-4 min-w-0 border-b border-border-default pb-3.5">
-          <h2 className="truncate text-[16px] font-semibold tracking-tight text-text-primary">
-            Errors by Endpoint
-          </h2>
-          <p className="mt-0.5 font-label-sm text-text-secondary">
-            Top failure sources (30d)
-          </p>
-        </header>
+  const maxPercentage = Math.max(
+    ...endpointErrors.map((item) => item.percentage),
+    1,
+  );
 
-        <div className="space-y-2">
+  return (
+    <section aria-labelledby="errors-by-endpoint" className="min-w-0">
+      <header>
+        <h2
+          id="errors-by-endpoint"
+          className="text-sm font-semibold text-text-primary"
+        >
+          Errors by endpoint
+        </h2>
+
+        <p className="mt-0.5 text-[12.5px] text-text-secondary">
+          Top failure sources · 30d
+        </p>
+      </header>
+
+      {endpointErrors.length === 0 ? (
+        <p className="py-8 text-center text-[13px] text-text-secondary">
+          No endpoint errors recorded.
+        </p>
+      ) : (
+        <ul className="mt-3 divide-y divide-border-default">
           {endpointErrors.map((item) => {
             const is5xx = item.statusCode >= 500;
-            const percentage = Math.min(Math.max(item.percentage, 0), 100);
+            const percentage = clamp(item.percentage);
 
             return (
-              <button
-                key={item.path}
-                type="button"
-                onClick={() => onSelectEndpoint?.(item.path)}
-                disabled={!onSelectEndpoint}
-                className={cn(
-                  "block w-full min-w-0 rounded-sm py-1.5 text-left outline-none transition-colors duration-150",
-                  onSelectEndpoint
-                    ? "cursor-pointer hover:bg-surface-muted/60 focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-accent"
-                    : "cursor-default",
-                  !onSelectEndpoint && "disabled:pointer-events-none",
-                )}
-              >
-                <div className="flex min-w-0 items-center justify-between gap-3">
-                  <span
-                    className={cn(
-                      "min-w-0 truncate font-code-inline font-medium",
-                      onSelectEndpoint
-                        ? "text-text-primary"
-                        : "text-text-secondary",
-                    )}
-                  >
-                    {item.path}
+              <li key={`${item.statusCode}-${item.path}`}>
+                <button
+                  type="button"
+                  onClick={() => onInspectTrace(item.path)}
+                  aria-label={`Inspect trace for ${item.path}, status ${item.statusCode}, ${item.percentage}% of errors`}
+                  className={cn(
+                    "group block w-full py-3 text-left outline-none",
+                    "transition-colors duration-150 hover:bg-surface-muted/60",
+                    "focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent",
+                  )}
+                >
+                  <span className="flex min-w-0 items-baseline justify-between gap-3">
+                    <span className="flex min-w-0 items-baseline gap-2.5">
+                      <span
+                        className={cn(
+                          "w-8 shrink-0 font-mono text-[12px] tabular-nums",
+                          is5xx ? "text-danger" : "text-warning",
+                        )}
+                      >
+                        {item.statusCode}
+                      </span>
+
+                      <span className="min-w-0 truncate font-mono text-[12.5px] text-text-primary">
+                        {item.path}
+                      </span>
+                    </span>
+
+                    <span className="shrink-0 font-mono text-[12.5px] font-medium tabular-nums text-text-primary">
+                      {item.percentage}%
+                    </span>
                   </span>
 
                   <span
-                    className={cn(
-                      "shrink-0 font-label-sm font-semibold",
-                      is5xx ? "text-danger" : "text-warning",
-                    )}
-                  >
-                    {item.percentage}% ({item.statusCode})
-                  </span>
-                </div>
-
-                <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-sm bg-surface-muted">
-                  <div
-                    className={cn(
-                      "h-full rounded-sm transition-[width] duration-200",
-                      is5xx ? "bg-danger" : "bg-warning",
-                    )}
-                    style={{ width: `${percentage}%` }}
+                    className="mt-2 block h-[3px] bg-surface-muted"
                     aria-hidden="true"
-                  />
-                </div>
-              </button>
+                  >
+                    <span
+                      className={cn(
+                        "block h-full transition-[width] duration-200",
+                        is5xx ? "bg-danger/75" : "bg-warning/75",
+                      )}
+                      style={{ width: `${percentage}%` }}
+                    />
+                  </span>
+
+                  <span className="mt-1.5 flex items-center justify-between gap-3 text-[11.5px] text-text-secondary">
+                    <span>{is5xx ? "Server error" : "Client error"}</span>
+
+                    <span className="shrink-0 text-accent opacity-0 transition-opacity duration-150 group-hover:opacity-100 group-focus-visible:opacity-100 [@media(hover:none)]:opacity-100">
+                      Inspect trace →
+                    </span>
+                  </span>
+                </button>
+              </li>
             );
           })}
-
-          {endpointErrors.length === 0 && (
-            <div className="py-8 text-center font-label-sm text-text-secondary">
-              No endpoint errors recorded.
-            </div>
-          )}
-        </div>
-      </div>
-
-      <div className="mt-4 flex min-w-0 shrink-0 items-center justify-between gap-3 border-t border-border-default pt-3.5">
-        <div className="flex min-w-0 items-center gap-1.5">
-          <AlertTriangle
-            className="h-4 w-4 shrink-0 text-danger"
-            aria-hidden="true"
-          />
-          <span className="truncate text-[12px] font-medium text-text-primary">
-            Checkout timeout elevated
-          </span>
-        </div>
-
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={onInspectTrace}
-          className="shrink-0"
-        >
-          Inspect Trace
-        </Button>
-      </div>
+        </ul>
+      )}
     </section>
   );
 };
