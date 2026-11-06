@@ -57,7 +57,7 @@ export const PageHeader: FC<PageHeaderProps> = ({
             aria-label="Environment"
             className={cn(
               controlBase,
-              "w-full min-w-0 cursor-pointer appearance-none pl-6 pr-8 font-mono text-[11.5px] sm:min-w-[164px]",
+              "w-full min-w-0 cursor-pointer appearance-none pl-6 pr-8 font-mono text-[11.5px] sm:min-w-41",
             )}
           >
             {ENVIRONMENTS.map((env) => (
@@ -86,7 +86,7 @@ export const PageHeader: FC<PageHeaderProps> = ({
             aria-label="Date range"
             className={cn(
               controlBase,
-              "w-full min-w-0 cursor-pointer appearance-none pl-8 pr-8 sm:min-w-[140px]",
+              "w-full min-w-0 cursor-pointer appearance-none pl-8 pr-8 sm:min-w-35",
             )}
           >
             {DATE_RANGES.map((range) => (

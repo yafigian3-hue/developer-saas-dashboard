@@ -1,6 +1,8 @@
+
 @import "@fontsource/inter/400.css";
 @import "@fontsource/inter/500.css";
 @import "@fontsource/inter/600.css";
+@import "@fontsource/inter/700.css";
 
 @import "@fontsource/jetbrains-mono/400.css";
 @import "@fontsource/jetbrains-mono/500.css";
@@ -8,25 +10,149 @@
 
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* =========================================
+   DESIGN TOKENS
+========================================= */
+
+:root {
+  color-scheme: light;
+
+  /* Background & surfaces */
+  --app-canvas: #F5F6F4;
+  --app-surface: #FFFFFF;
+  --app-surface-muted: #ECEFEB;
+  --app-surface-elevated: #FFFFFF;
+
+  /* Borders */
+  --app-border: #DDE2DD;
+  --app-border-strong: #C7CEC8;
+
+  /* Typography */
+  --app-text-primary: #202A35;
+  --app-text-secondary: #687482;
+  --app-text-muted: #929CA6;
+
+  /* Brand */
+  --app-accent: #315EFB;
+  --app-accent-hover: #244CE0;
+  --app-accent-soft: #E9EEFF;
+
+  /* Semantic colors */
+  --app-success: #16856B;
+  --app-success-soft: #E5F3EE;
+
+  --app-warning: #B7791F;
+  --app-warning-soft: #FFF4DE;
+
+  --app-danger: #D64C4C;
+  --app-danger-soft: #FCEBEA;
+
+  --app-info: #4776CE;
+  --app-info-soft: #EAF0FC;
+
+  /* Effects */
+  --app-overlay: rgb(18 27 38 / 48%);
+  --app-shadow: 0 8px 30px rgb(32 42 53 / 6%);
+  --app-shadow-lg: 0 20px 60px rgb(32 42 53 / 12%);
+}
+
+/* =========================================
+   DARK THEME
+========================================= */
+
+.dark,
+[data-theme="dark"] {
+  color-scheme: dark;
+
+  --app-canvas: #111820;
+  --app-surface: #18222D;
+  --app-surface-muted: #202C38;
+  --app-surface-elevated: #202C38;
+
+  --app-border: #2B3947;
+  --app-border-strong: #3A4A59;
+
+  --app-text-primary: #E8EDF2;
+  --app-text-secondary: #A4B0BC;
+  --app-text-muted: #748292;
+
+  --app-accent: #7B97FF;
+  --app-accent-hover: #9AAEFF;
+  --app-accent-soft: #25345D;
+
+  --app-success: #45B995;
+  --app-success-soft: #183A33;
+
+  --app-warning: #E5AB55;
+  --app-warning-soft: #403321;
+
+  --app-danger: #F07878;
+  --app-danger-soft: #402727;
+
+  --app-info: #80A8F5;
+  --app-info-soft: #263753;
+
+  --app-overlay: rgb(0 0 0 / 65%);
+  --app-shadow: 0 8px 30px rgb(0 0 0 / 18%);
+  --app-shadow-lg: 0 20px 60px rgb(0 0 0 / 30%);
+}
+
+/* =========================================
+   TAILWIND THEME
+========================================= */
+
 @theme {
   --font-sans: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
 
-  --color-canvas: #F7F7F5;
-  --color-surface: #FFFFFF;
-  --color-surface-muted: #F0F1EE;
-  --color-border-default: #D9DDD7;
+  /* Background & surfaces */
+  --color-canvas: var(--app-canvas);
+  --color-surface: var(--app-surface);
+  --color-surface-muted: var(--app-surface-muted);
+  --color-surface-elevated: var(--app-surface-elevated);
 
-  --color-text-primary: #161A18;
-  --color-text-secondary: #68716B;
+  /* Borders */
+  --color-border-default: var(--app-border);
+  --color-border-strong: var(--app-border-strong);
 
-  --color-accent: #3F6B5B;
-  --color-accent-soft: #E4ECE8;
+  /* Typography */
+  --color-text-primary: var(--app-text-primary);
+  --color-text-secondary: var(--app-text-secondary);
+  --color-text-muted: var(--app-text-muted);
 
-  --color-success: #3F765C;
-  --color-warning: #B47A2C;
-  --color-danger: #B84C45;
+  /* Brand */
+  --color-accent: var(--app-accent);
+  --color-accent-hover: var(--app-accent-hover);
+  --color-accent-soft: var(--app-accent-soft);
+
+  /* Semantic */
+  --color-success: var(--app-success);
+  --color-success-soft: var(--app-success-soft);
+
+  --color-warning: var(--app-warning);
+  --color-warning-soft: var(--app-warning-soft);
+
+  --color-danger: var(--app-danger);
+  --color-danger-soft: var(--app-danger-soft);
+
+  --color-info: var(--app-info);
+  --color-info-soft: var(--app-info-soft);
+
+  /* Radius */
+  --radius-control: 0.625rem;
+  --radius-panel: 0.875rem;
+  --radius-dialog: 1rem;
+
+  /* Shadows */
+  --shadow-panel: var(--app-shadow);
+  --shadow-dialog: var(--app-shadow-lg);
 }
+
+/* =========================================
+   BASE STYLES
+========================================= */
 
 @layer base {
   *,
@@ -38,30 +164,28 @@
   html,
   body,
   #root {
+    min-width: 0;
+    min-height: 100%;
     margin: 0;
     padding: 0;
-    min-width: 0;
-    max-width: 100%;
   }
 
   html {
-    overflow-x: hidden;
+    scroll-behavior: smooth;
+    scrollbar-gutter: stable;
   }
 
   body {
     min-height: 100vh;
-    overflow-x: hidden;
-    background-color: var(--color-canvas);
-    color: var(--color-text-primary);
+    background-color: var(--app-canvas);
+    color: var(--app-text-primary);
     font-family: var(--font-sans);
+    font-size: 14px;
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    font-synthesis: none;
+    text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-  }
-
-  #root {
-    min-height: 100vh;
-    overflow-x: hidden;
   }
 
   button,
@@ -70,37 +194,165 @@
   select {
     font: inherit;
   }
+
+  button {
+    cursor: pointer;
+  }
+
+  button:disabled {
+    cursor: not-allowed;
+  }
+
+  input,
+  textarea,
+  select {
+    min-width: 0;
+  }
+
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  img,
+  svg,
+  video,
+  canvas {
+    display: block;
+    max-width: 100%;
+  }
+
+  ::selection {
+    background-color: var(--app-accent-soft);
+    color: var(--app-text-primary);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--app-accent);
+    outline-offset: 3px;
+  }
+
+  :disabled {
+    opacity: 0.55;
+  }
+
+  body,
+  #root {
+    transition:
+      background-color 180ms ease,
+      color 180ms ease;
+  }
 }
 
-.font-metric-display {
-  font-family: var(--font-mono);
-  font-size: 28px;
-  line-height: 32px;
-  letter-spacing: -0.03em;
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
+/* =========================================
+   TYPOGRAPHY UTILITIES
+========================================= */
+
+@layer utilities {
+  .font-metric-display {
+    font-family: var(--font-mono);
+    font-size: clamp(1.5rem, 2vw, 1.875rem);
+    line-height: 1.15;
+    letter-spacing: -0.04em;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .font-code-inline {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    line-height: 1rem;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .font-label-md {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    line-height: 1rem;
+    letter-spacing: -0.01em;
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .font-label-sm {
+    font-family: var(--font-mono);
+    font-size: 0.6875rem;
+    line-height: 0.875rem;
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .tabular-nums {
+    font-variant-numeric: tabular-nums;
+  }
+
+  .text-balance {
+    text-wrap: balance;
+  }
 }
 
-.font-code-inline {
-  font-family: var(--font-mono);
-  font-size: 12px;
-  line-height: 16px;
-  font-variant-numeric: tabular-nums;
+/* =========================================
+   SHARED COMPONENT STYLES
+========================================= */
+
+@layer components {
+  .surface-panel {
+    border: 1px solid var(--app-border);
+    border-radius: var(--radius-panel);
+    background-color: var(--app-surface);
+  }
+
+  .surface-panel-muted {
+    border: 1px solid var(--app-border);
+    border-radius: var(--radius-panel);
+    background-color: var(--app-surface-muted);
+  }
+
+  .section-eyebrow {
+    color: var(--app-text-muted);
+    font-family: var(--font-mono);
+    font-size: 0.6875rem;
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    line-height: 1rem;
+    text-transform: uppercase;
+  }
+
+  .custom-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: var(--app-border-strong) transparent;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    border-radius: 999px;
+    background-color: var(--app-border-strong);
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background-color: var(--app-text-muted);
+  }
 }
 
-.font-label-md {
-  font-family: var(--font-mono);
-  font-size: 12px;
-  line-height: 16px;
-  letter-spacing: -0.01em;
-  font-weight: 500;
-  font-variant-numeric: tabular-nums;
-}
+/* =========================================
+   REDUCED MOTION
+========================================= */
 
-.font-label-sm {
-  font-family: var(--font-mono);
-  font-size: 11px;
-  line-height: 14px;
-  font-weight: 500;
-  font-variant-numeric: tabular-nums;
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

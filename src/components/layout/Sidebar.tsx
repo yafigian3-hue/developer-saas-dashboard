@@ -1,11 +1,14 @@
-import { useEffect, type FC } from "react";
+
+import { useEffect, useState, type FC } from "react";
 import {
-  LayoutDashboard,
-  Layers,
+  Activity,
   ArrowLeftRight,
-  Terminal,
-  Settings,
   BookOpen,
+  Code2,
+  Layers,
+  LayoutDashboard,
+  Settings,
+  Terminal,
   X,
   type LucideIcon,
 } from "lucide-react";
@@ -30,9 +33,7 @@ export interface SidebarProps {
   isOpenMobile?: boolean;
   onCloseMobile?: () => void;
   onOpenDocs?: () => void;
-  /** Opsional. Contoh: "99.98%". Jika kosong, angka tidak ditampilkan. */
   uptime?: string;
-  /** Opsional. Jika diisi, status menjadi tombol menuju halaman status. */
   onOpenStatus?: () => void;
 }
 
@@ -44,9 +45,8 @@ const navItems: SidebarNavItem[] = [
   { id: "settings", label: "Settings", icon: Settings },
 ];
 
-/* Satu sumber untuk fokus & hover agar konsisten di semua item. */
 const focusRing =
-  "outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent";
+  "outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-surface";
 
 const SidebarNavButton: FC<{
   item: SidebarNavItem;
@@ -61,25 +61,32 @@ const SidebarNavButton: FC<{
       onClick={onClick}
       aria-current={isActive ? "page" : undefined}
       className={cn(
-        "relative flex h-11 w-full items-center gap-3 rounded-md px-3 text-left text-[14.5px] transition-colors duration-150",
-        "lg:h-9 lg:px-2.5 lg:text-[13.5px]",
+        "group relative flex h-10 w-full items-center gap-3 rounded-lg px-3 text-left text-[13px] transition-colors duration-150",
         focusRing,
         isActive
-          ? "bg-surface-muted font-medium text-text-primary"
+          ? "bg-accent-soft font-semibold text-accent"
           : "text-text-secondary hover:bg-surface-muted hover:text-text-primary",
-        /* Indikator kiri: menempel ke tepi sidebar (nav memakai px-3). */
-        isActive &&
-          "before:absolute before:-left-3 before:inset-y-2.5 before:w-0.5 before:rounded-r-sm before:bg-accent before:content-[''] lg:before:inset-y-[7px]",
       )}
     >
+      {isActive && (
+        <span
+          className="absolute inset-y-2 left-0 w-[3px] rounded-r-full bg-accent"
+          aria-hidden="true"
+        />
+      )}
+
       <Icon
+        size={17}
+        strokeWidth={isActive ? 2.1 : 1.75}
         className={cn(
-          "h-4 w-4 shrink-0",
-          isActive ? "text-accent" : "text-current",
+          "shrink-0 transition-colors duration-150",
+          isActive
+            ? "text-accent"
+            : "text-text-muted group-hover:text-text-primary",
         )}
-        strokeWidth={isActive ? 2 : 1.75}
         aria-hidden="true"
       />
+
       <span className="truncate">{item.label}</span>
     </button>
   );
@@ -94,14 +101,39 @@ export const Sidebar: FC<SidebarProps> = ({
   uptime,
   onOpenStatus,
 }) => {
-  /* Tutup drawer dengan Escape. */
+  const [isDesktop, setIsDesktop] = useState(false);
+
+  const isHiddenOnMobile = !isDesktop && !isOpenMobile;
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia("(min-width: 64rem)");
+
+    const updateViewport = () => {
+      setIsDesktop(mediaQuery.matches);
+    };
+
+    updateViewport();
+    mediaQuery.addEventListener("change", updateViewport);
+
+    return () => {
+      mediaQuery.removeEventListener("change", updateViewport);
+    };
+  }, []);
+
   useEffect(() => {
     if (!isOpenMobile) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onCloseMobile?.();
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        onCloseMobile?.();
+      }
     };
-    document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
+
+    document.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+    };
   }, [isOpenMobile, onCloseMobile]);
 
   const handleNavigate = (page: NavPage) => {
@@ -114,125 +146,163 @@ export const Sidebar: FC<SidebarProps> = ({
     onCloseMobile?.();
   };
 
-  const statusContent = (
-    <>
-      <span className="mx-[5px] h-1.5 w-1.5 shrink-0 rounded-full bg-success" aria-hidden="true" />
-      <span>Operational</span>
-      {uptime && (
-        <span className="ml-auto font-mono text-[11.5px] text-text-secondary/70">
-          {uptime}
-        </span>
-      )}
-    </>
-  );
-
-  const statusClass =
-    "flex h-11 w-full items-center gap-2.5 rounded-md px-3 text-[12.5px] text-text-secondary lg:h-9 lg:px-2.5";
-
   return (
     <>
+      {/* Mobile backdrop */}
       {isOpenMobile && (
         <button
           type="button"
-          aria-label="Tutup menu navigasi"
+          aria-label="Close navigation menu"
           onClick={onCloseMobile}
-          className="fixed inset-0 z-30 cursor-default bg-text-primary/40 lg:hidden"
+          className="fixed inset-0 z-30 cursor-default bg-text-primary/40 backdrop-blur-[2px] lg:hidden"
         />
       )}
 
       <aside
+        id="application-navigation"
         aria-label="Application navigation"
+        aria-hidden={isHiddenOnMobile}
+        inert={isHiddenOnMobile}
         className={cn(
-          "fixed inset-y-0 left-0 z-40 flex w-[min(17.5rem,84vw)] flex-col border-r border-border-default bg-surface",
+          "fixed inset-y-0 left-0 z-40 flex w-[min(18rem,88vw)] flex-col border-r border-border-default bg-surface",
           "pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]",
           "transition-transform duration-200 ease-out motion-reduce:transition-none",
           "lg:w-60 lg:pt-0 lg:pb-0",
-          isOpenMobile ? "translate-x-0" : "-translate-x-full lg:translate-x-0",
+          isOpenMobile
+            ? "translate-x-0"
+            : "-translate-x-full lg:translate-x-0",
         )}
       >
         {/* Brand */}
-        <div className="flex h-14 shrink-0 items-center justify-between border-b border-border-default pl-5 pr-3">
-          <div
-            className="flex min-w-0 items-baseline text-[13px] leading-none tracking-[0.14em]"
-            aria-label="Dev Console"
-          >
-            <span className="font-bold text-text-primary">DEV</span>
-            <span className="ml-[0.5em] font-normal text-text-secondary">
-              CONSOLE
-            </span>
+        <div className="flex h-14 shrink-0 items-center justify-between border-b border-border-default px-5">
+          <div className="flex min-w-0 items-center gap-3">
+            <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-accent text-white">
+              <Code2 size={17} strokeWidth={2.2} aria-hidden="true" />
+            </div>
+
+            <div className="flex min-w-0 flex-col gap-0.5">
+              <span className="truncate text-[13px] font-bold leading-none tracking-[0.08em] text-text-primary">
+                DEV CONSOLE
+              </span>
+              <span className="text-[9px] font-medium leading-none tracking-[0.12em] text-text-muted">
+                ENGINEERING WORKSPACE
+              </span>
+            </div>
           </div>
 
           <button
             type="button"
             onClick={onCloseMobile}
-            aria-label="Tutup menu navigasi"
+            aria-label="Close navigation menu"
             className={cn(
-              "-mr-1.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-md text-text-secondary transition-colors duration-150 hover:bg-surface-muted hover:text-text-primary lg:hidden",
+              "flex size-9 shrink-0 items-center justify-center rounded-lg text-text-secondary transition-colors hover:bg-surface-muted hover:text-text-primary lg:hidden",
               focusRing,
             )}
           >
-            <X className="h-4 w-4" aria-hidden="true" />
+            <X size={17} aria-hidden="true" />
           </button>
         </div>
 
-        {/* Navigasi */}
-        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 pb-4 pt-4 lg:pt-5">
-          <nav
-            aria-label="Primary navigation"
-            className="flex flex-col gap-0.5"
-          >
-            {navItems.map((item) => (
-              <SidebarNavButton
-                key={item.id}
-                item={item}
-                isActive={currentPage === item.id}
-                onClick={() => handleNavigate(item.id)}
-              />
-            ))}
+        {/* Navigation */}
+        <div className="custom-scrollbar min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 pb-5 pt-6">
+          <nav aria-label="Primary navigation">
+            <p className="mb-2 px-3 font-mono text-[10px] font-medium uppercase tracking-[0.1em] text-text-muted">
+              Workspace
+            </p>
+
+            <div className="flex flex-col gap-1">
+              {navItems.map((item) => (
+                <SidebarNavButton
+                  key={item.id}
+                  item={item}
+                  isActive={currentPage === item.id}
+                  onClick={() => handleNavigate(item.id)}
+                />
+              ))}
+            </div>
           </nav>
 
           {onOpenDocs && (
-            <div className="mt-6 lg:mt-8">
-              <p
-                id="sidebar-resources-label"
-                className="mb-1.5 px-3 text-[11.5px] font-medium tracking-[0.02em] text-text-secondary/70 lg:px-2.5"
-              >
+            <div className="mt-9">
+              <p className="mb-2 px-3 font-mono text-[10px] font-medium uppercase tracking-[0.1em] text-text-muted">
                 Resources
               </p>
+
               <button
                 type="button"
                 onClick={handleOpenDocs}
                 className={cn(
-                  "flex h-11 w-full items-center gap-3 rounded-md px-3 text-left text-[14px] text-text-secondary transition-colors duration-150 hover:bg-surface-muted hover:text-text-primary",
-                  "lg:h-8 lg:px-2.5 lg:text-[13px]",
+                  "group flex h-10 w-full items-center gap-3 rounded-lg px-3 text-left text-[13px] text-text-secondary transition-colors hover:bg-surface-muted hover:text-text-primary",
                   focusRing,
                 )}
               >
-                <BookOpen className="h-4 w-4 shrink-0" strokeWidth={1.75} aria-hidden="true" />
-                <span className="truncate">Documentation</span>
+                <BookOpen
+                  size={17}
+                  strokeWidth={1.75}
+                  className="shrink-0 text-text-muted transition-colors group-hover:text-text-primary"
+                  aria-hidden="true"
+                />
+
+                <span>Documentation</span>
               </button>
             </div>
           )}
         </div>
 
-        {/* Status sistem */}
-        <div className="shrink-0 border-t border-border-default px-3 py-1.5">
+        {/* System status */}
+        <div className="shrink-0 border-t border-border-default p-3">
           {onOpenStatus ? (
             <button
               type="button"
               onClick={onOpenStatus}
-              aria-label={`Status sistem: operasional${uptime ? `, uptime ${uptime}` : ""}`}
+              aria-label={`System status: operational${uptime ? `, uptime ${uptime}` : ""}`}
               className={cn(
-                statusClass,
-                "transition-colors duration-150 hover:bg-surface-muted hover:text-text-primary",
+                "flex min-h-11 w-full items-center gap-3 rounded-lg px-3 text-left transition-colors hover:bg-surface-muted",
                 focusRing,
               )}
             >
-              {statusContent}
+              <span className="relative flex size-2 shrink-0">
+                <span className="absolute inline-flex size-full animate-ping rounded-full bg-success opacity-25" />
+                <span className="relative inline-flex size-2 rounded-full bg-success" />
+              </span>
+
+              <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+                <span className="text-[12px] font-medium text-text-primary">
+                  All systems operational
+                </span>
+                {uptime && (
+                  <span className="font-mono text-[10px] text-text-muted">
+                    Uptime {uptime}
+                  </span>
+                )}
+              </span>
+
+              <Activity
+                size={15}
+                className="shrink-0 text-success"
+                aria-hidden="true"
+              />
             </button>
           ) : (
-            <div className={statusClass} role="status">
-              {statusContent}
+            <div
+              className="flex min-h-11 items-center gap-3 rounded-lg px-3"
+              role="status"
+            >
+              <span className="relative flex size-2 shrink-0">
+                <span className="absolute inline-flex size-full animate-ping rounded-full bg-success opacity-25" />
+                <span className="relative inline-flex size-2 rounded-full bg-success" />
+              </span>
+
+              <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+                <span className="text-[12px] font-medium text-text-primary">
+                  All systems operational
+                </span>
+                {uptime && (
+                  <span className="font-mono text-[10px] text-text-muted">
+                    Uptime {uptime}
+                  </span>
+                )}
+              </span>
             </div>
           )}
         </div>
@@ -240,3 +310,4 @@ export const Sidebar: FC<SidebarProps> = ({
     </>
   );
 };
+  

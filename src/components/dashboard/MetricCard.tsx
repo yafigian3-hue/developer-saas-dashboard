@@ -10,14 +10,9 @@ export interface MetricCardProps {
   value: ReactNode;
   subtitle: ReactNode;
   trend?: "up" | "down";
-  /**
-   * Opsional. Sparkline hanya dirender untuk variant "primary".
-   * Nilai "bars" tetap diterima agar kode lama tidak error, tetapi diabaikan.
-   */
+
   chartType?: SparklineType | "bars";
-  /** primary = angka utama (besar). secondary = pendamping (tenang). */
   variant?: "primary" | "secondary";
-  /** Dipakai parent untuk padding/divider sel, mis. "sm:px-6". */
   className?: string;
 }
 
@@ -35,13 +30,12 @@ const SPARKLINE: Record<SparklineType, { d: string; x: number; y: number }> = {
   },
 };
 
-/* Garis tipis netral, tanpa fill. Hanya titik terakhir yang diberi penekanan. */
 const Sparkline: FC<{ type: SparklineType }> = ({ type }) => {
   const s = SPARKLINE[type];
   return (
     <svg
       viewBox="0 0 54 22"
-      className="h-6 w-[72px] shrink-0 overflow-visible"
+      className="h-6 w-18 shrink-0 overflow-visible"
       aria-hidden="true"
     >
       <path
@@ -58,19 +52,6 @@ const Sparkline: FC<{ type: SparklineType }> = ({ type }) => {
   );
 };
 
-/**
- * Tanpa border, tanpa background, tanpa shadow.
- * Pengelompokan dilakukan parent (garis tipis antar sel), contoh:
- *
- * <section className="grid grid-cols-1 divide-y divide-border-default border-y border-border-default
- *                     sm:grid-cols-3 sm:divide-y-0 lg:grid-cols-[1.7fr_1fr_1fr_1fr]">
- *   <MetricCard variant="primary" className="sm:col-span-3 sm:border-b sm:border-border-default lg:col-span-1 lg:border-b-0" ... />
- *   <MetricCard className="sm:border-l sm:border-border-default sm:px-6 sm:first:border-l-0" ... />
- * </section>
- *
- * <640px : metrik sekunder menjadi baris label (kiri) – nilai (kanan).
- * >=640px: tersusun vertikal: label, nilai, tren + konteks.
- */
 export const MetricCard: FC<MetricCardProps> = ({
   title,
   badgeText,
@@ -93,8 +74,8 @@ export const MetricCard: FC<MetricCardProps> = ({
       className={cn(
         "min-w-0",
         isPrimary
-          ? "pb-4 pt-[18px] sm:py-[22px]"
-          : "grid grid-cols-[1fr_auto] items-center gap-x-4 py-3.5 sm:block sm:py-[22px]",
+          ? "pb-4 pt-4.5 sm:py-5.5"
+          : "grid grid-cols-[1fr_auto] items-center gap-x-4 py-3.5 sm:block sm:py-5.5",
         className,
       )}
     >
@@ -114,7 +95,7 @@ export const MetricCard: FC<MetricCardProps> = ({
             "min-w-0 whitespace-nowrap font-semibold tabular-nums text-text-primary",
             isPrimary
               ? "text-[40px] leading-[1.1] tracking-[-0.04em] sm:text-[46px]"
-              : "text-[22px] leading-[1.1] tracking-[-0.025em] sm:text-[28px]",
+              : "text-[22px] leading-[1.1] tracking-tight sm:text-[28px]",
           )}
         >
           {value}

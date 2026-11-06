@@ -1,10 +1,10 @@
-import { useEffect, useRef } from "react";
-import type { FC } from "react";
+import { useEffect, useRef, type FC } from "react";
 import { Download, Menu, PanelRightOpen, Search, Settings } from "lucide-react";
 import { cn } from "../../lib/utils";
 
 export interface TopbarProps {
   onOpenMobileSidebar: () => void;
+  mobileSidebarOpen: boolean;
   onOpenDrawer?: () => void;
   onOpenSettings?: () => void;
   onExportReport?: () => void;
@@ -12,18 +12,29 @@ export interface TopbarProps {
   onSearchChange: (q: string) => void;
 }
 
-const PLACEHOLDER_FULL = "Search requests, endpoints, IDs, or IPs...";
-const PLACEHOLDER_COMPACT = "Search requests…";
+const iconButton =
+  "inline-flex size-9 shrink-0 items-center justify-center rounded-lg text-text-secondary transition-colors hover:bg-surface-muted hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-surface";
 
-const iconButton = cn(
-  "inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-md text-text-secondary lg:h-8 lg:w-8",
-  "transition-colors duration-150 hover:bg-surface-muted hover:text-text-primary active:bg-surface-muted",
-  "outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent",
-  "disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-text-secondary",
+const ActionButton: FC<{
+  label: string;
+  onClick: () => void;
+  children: React.ReactNode;
+  className?: string;
+}> = ({ label, onClick, children, className }) => (
+  <button
+    type="button"
+    onClick={onClick}
+    aria-label={label}
+    title={label}
+    className={cn(iconButton, className)}
+  >
+    {children}
+  </button>
 );
 
 export const Topbar: FC<TopbarProps> = ({
   onOpenMobileSidebar,
+  mobileSidebarOpen,
   onOpenDrawer,
   onOpenSettings,
   onExportReport,
@@ -36,12 +47,17 @@ export const Topbar: FC<TopbarProps> = ({
     const handleKeyDown = (event: KeyboardEvent) => {
       const target = event.target as HTMLElement | null;
 
-      if (
-        event.key === "/" &&
-        target?.tagName !== "INPUT" &&
-        target?.tagName !== "TEXTAREA" &&
-        !target?.isContentEditable
-      ) {
+      const isTyping =
+        target instanceof HTMLElement &&
+        (target.isContentEditable ||
+          ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName));
+
+      if (event.key === "/" && !isTyping && !event.ctrlKey && !event.metaKey) {
+        event.preventDefault();
+        searchInputRef.current?.focus();
+      }
+
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k") {
         event.preventDefault();
         searchInputRef.current?.focus();
       }
@@ -49,53 +65,42 @@ export const Topbar: FC<TopbarProps> = ({
 
     window.addEventListener("keydown", handleKeyDown);
 
-    return () => {
-      window.removeEventListener("keydown", handleKeyDown);
-    };
+    return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
-  useEffect(() => {
-    const mediaQuery = window.matchMedia("(max-width: 639px)");
-
-    const updatePlaceholder = () => {
-      if (searchInputRef.current) {
-        searchInputRef.current.placeholder = mediaQuery.matches
-          ? PLACEHOLDER_COMPACT
-          : PLACEHOLDER_FULL;
-      }
-    };
-
-    updatePlaceholder();
-    mediaQuery.addEventListener("change", updatePlaceholder);
-
-    return () => {
-      mediaQuery.removeEventListener("change", updatePlaceholder);
-    };
-  }, []);
-
-  const hasContextualActions = Boolean(onOpenDrawer || onExportReport);
+  const hasActions = Boolean(onOpenDrawer || onExportReport || onOpenSettings);
 
   return (
-    <header className="fixed inset-x-0 top-0 z-30 flex h-14 min-w-0 items-center gap-1 border-b border-border-default bg-surface px-3 sm:gap-2 sm:px-4 lg:left-60 lg:px-6">
+    <header className="fixed inset-x-0 top-0 z-30 flex h-14 min-w-0 items-center gap-3 border-b border-border-default bg-surface/95 px-3 backdrop-blur-md sm:px-5 lg:left-60 lg:px-6">
+      {/* Mobile navigation */}
       <button
         type="button"
         onClick={onOpenMobileSidebar}
+        aria-controls="application-navigation"
+        aria-expanded={mobileSidebarOpen}
         aria-label="Open navigation menu"
-        className={cn(iconButton, "-ml-2 text-text-primary lg:hidden")}
+        className={cn(iconButton, "lg:hidden")}
       >
-        <Menu className="h-5 w-5" aria-hidden="true" />
+        <Menu size={19} strokeWidth={1.8} aria-hidden="true" />
       </button>
 
-      <div className="min-w-0 flex-1 sm:flex-none">
-        <div className="group relative flex h-9 w-full max-w-[560px] items-center sm:h-8 sm:w-[420px] lg:w-[480px]">
+      {/* Search */}
+      <div className="min-w-0 flex-1 sm:max-w-[420px] lg:max-w-[480px]">
+        <label
+          htmlFor="global-search"
+          className="group flex h-9 w-full items-center gap-2.5 rounded-lg border border-transparent bg-surface-muted px-3 transition-colors duration-150 hover:border-border-default focus-within:border-accent focus-within:bg-surface"
+        >
           <Search
-            className="pointer-events-none absolute left-0 h-4 w-4 text-text-secondary/70 transition-colors duration-150 group-focus-within:text-text-primary"
+            size={16}
+            strokeWidth={1.8}
+            className="shrink-0 text-text-muted transition-colors group-focus-within:text-accent"
             aria-hidden="true"
           />
 
           <input
             ref={searchInputRef}
-            type="text"
+            id="global-search"
+            type="search"
             value={searchQuery}
             onChange={(event) => onSearchChange(event.target.value)}
             onKeyDown={(event) => {
@@ -103,68 +108,47 @@ export const Topbar: FC<TopbarProps> = ({
                 event.currentTarget.blur();
               }
             }}
-            placeholder={PLACEHOLDER_FULL}
-            aria-label="Search requests"
+            placeholder="Search requests, endpoints, IDs..."
+            aria-label="Search requests, endpoints, IDs, or IP addresses"
             autoComplete="off"
-            className={cn(
-              "peer h-full w-full min-w-0 truncate border-b border-border-default bg-transparent pl-6 pr-8 text-[14px] text-text-primary outline-none",
-              "placeholder:text-text-secondary/60",
-              "transition-colors duration-150",
-              "hover:border-text-secondary/50",
-              "focus:border-accent sm:text-[13px]",
-            )}
+            className="h-full min-w-0 flex-1 bg-transparent text-[12px] text-text-primary outline-none placeholder:text-text-muted sm:text-[13px] [&::-webkit-search-cancel-button]:cursor-pointer"
           />
 
-          <kbd className="pointer-events-none absolute right-0 hidden rounded border border-border-default bg-surface px-1.5 py-0.5 font-code-inline text-[10px] leading-none text-text-secondary transition-opacity duration-150 peer-focus:opacity-0 sm:block">
+          <kbd className="hidden shrink-0 rounded border border-border-default bg-surface px-1.5 py-0.5 font-mono text-[10px] text-text-muted sm:inline-flex">
             /
           </kbd>
+        </label>
+      </div>
+
+      {/* Actions */}
+      {hasActions && (
+        <div className="ml-auto flex shrink-0 items-center gap-1">
+          {onOpenDrawer && (
+            <ActionButton label="Inspect request" onClick={onOpenDrawer}>
+              <PanelRightOpen size={17} strokeWidth={1.8} aria-hidden="true" />
+            </ActionButton>
+          )}
+
+          {onExportReport && (
+            <ActionButton label="Export report" onClick={onExportReport}>
+              <Download size={17} strokeWidth={1.8} aria-hidden="true" />
+            </ActionButton>
+          )}
+
+          {onOpenSettings && (
+            <>
+              <div
+                className="mx-1 h-5 w-px bg-border-default"
+                aria-hidden="true"
+              />
+
+              <ActionButton label="Open settings" onClick={onOpenSettings}>
+                <Settings size={17} strokeWidth={1.8} aria-hidden="true" />
+              </ActionButton>
+            </>
+          )}
         </div>
-      </div>
-
-      <div className="ml-auto flex shrink-0 items-center gap-0.5">
-        {onOpenDrawer && (
-          <button
-            type="button"
-            onClick={onOpenDrawer}
-            aria-label="Open inspect drawer"
-            title="Inspect request"
-            className={iconButton}
-          >
-            <PanelRightOpen className="h-4 w-4" aria-hidden="true" />
-          </button>
-        )}
-
-        {onExportReport && (
-          <button
-            type="button"
-            onClick={onExportReport}
-            aria-label="Export report"
-            title="Export report"
-            className={iconButton}
-          >
-            <Download className="h-4 w-4" aria-hidden="true" />
-          </button>
-        )}
-
-        {hasContextualActions && (
-          <div
-            className="mx-1 h-4 w-px bg-border-default sm:mx-1.5"
-            aria-hidden="true"
-          />
-        )}
-
-        {onOpenSettings && (
-          <button
-            type="button"
-            onClick={onOpenSettings}
-            aria-label="Open settings"
-            title="Settings"
-            className={cn(iconButton, "hidden sm:ml-3 sm:inline-flex")}
-          >
-            <Settings className="h-4 w-4" aria-hidden="true" />
-          </button>
-        )}
-      </div>
+      )}
     </header>
   );
 };

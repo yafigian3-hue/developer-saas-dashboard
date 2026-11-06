@@ -602,7 +602,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
         </section>
 
         {!hasRequests && (
-          <div className="border-l-2 border-warning bg-warning/[0.04] px-3 py-2.5">
+          <div className="border-l-2 border-warning bg-warning/4 px-3 py-2.5">
             <p className="text-[11px] leading-4 text-warning">
               No request records are available in the current view.
             </p>
@@ -612,7 +612,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
         {error && (
           <div
             role="alert"
-            className="border-l-2 border-danger bg-danger/[0.04] px-3 py-2.5"
+            className="border-l-2 border-danger bg-danger/4 px-3 py-2.5"
           >
             <p className="text-[11px] leading-4 text-danger">{error}</p>
           </div>
