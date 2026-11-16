@@ -208,17 +208,18 @@ export const RequestDetailDrawer: React.FC<RequestDetailDrawerProps> = ({
       width="w-full sm:w-[440px] md:w-[480px]"
     >
       <div className="flex h-full min-h-0 flex-col bg-surface">
+        {/* Header */}
         <header className="flex shrink-0 items-center justify-between gap-3 border-b border-border-default px-4 py-3 sm:px-5">
           <div className="flex min-w-0 items-center gap-2.5">
-            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-border-default bg-surface-muted text-accent">
-              <Code2 className="h-3.5 w-3.5" aria-hidden="true" />
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-border-default bg-surface-muted text-accent">
+              <Code2 className="h-4 w-4" aria-hidden="true" />
             </div>
 
             <div className="min-w-0">
-              <h2 className="text-[14px] font-semibold tracking-tight text-text-primary">
+              <h2 className="font-label-md font-semibold text-text-primary">
                 Request Details
               </h2>
-              <code className="mt-0.5 block truncate font-code-inline text-[10px] text-text-secondary">
+              <code className="mt-0.5 block truncate font-code-inline text-text-secondary">
                 {request.id}
               </code>
             </div>
@@ -235,6 +236,7 @@ export const RequestDetailDrawer: React.FC<RequestDetailDrawerProps> = ({
           </Button>
         </header>
 
+        {/* Request Status */}
         <section
           className={cn(
             "flex shrink-0 items-start justify-between gap-4 border-b px-4 py-3.5 sm:px-5",
@@ -250,10 +252,15 @@ export const RequestDetailDrawer: React.FC<RequestDetailDrawerProps> = ({
             />
 
             <div className="min-w-0">
-              <div className={cn("font-label-md", statusTone.textClass)}>
+              <div
+                className={cn(
+                  "font-label-md font-semibold",
+                  statusTone.textClass,
+                )}
+              >
                 {request.status} {request.statusText}
               </div>
-              <p className="mt-0.5 text-[11px] leading-4 text-text-secondary">
+              <p className="mt-1 font-label-sm text-text-secondary">
                 {statusTone.label}
               </p>
             </div>
@@ -268,13 +275,15 @@ export const RequestDetailDrawer: React.FC<RequestDetailDrawerProps> = ({
             >
               {formatLatency(request.latency)}
             </div>
-            <div className="mt-0.5 font-label-sm text-text-secondary">
+            <div className="mt-1 font-label-sm text-text-secondary">
               {request.utcDate}
             </div>
           </div>
         </section>
 
+        {/* Tabs */}
         <nav
+          role="tablist"
           aria-label="Request detail sections"
           className="flex shrink-0 overflow-x-auto border-b border-border-default bg-surface-muted/40 px-3 sm:px-4"
         >
@@ -284,12 +293,15 @@ export const RequestDetailDrawer: React.FC<RequestDetailDrawerProps> = ({
             return (
               <button
                 key={tab.id}
+                id={`request-tab-${tab.id}`}
                 type="button"
                 role="tab"
                 aria-selected={isActive}
+                aria-controls="request-detail-panel"
+                tabIndex={isActive ? 0 : -1}
                 onClick={() => setActiveTab(tab.id)}
                 className={cn(
-                  "shrink-0 border-b-2 px-2.5 py-2.5 font-label-sm capitalize transition-colors duration-150 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-accent",
+                  "shrink-0 border-b-2 px-3 py-3 font-label-sm font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-accent",
                   isActive
                     ? "border-accent text-accent"
                     : "border-transparent text-text-secondary hover:text-text-primary",
@@ -301,21 +313,27 @@ export const RequestDetailDrawer: React.FC<RequestDetailDrawerProps> = ({
           })}
         </nav>
 
-        <div className="min-h-0 flex-1 overflow-y-auto">
+        {/* Tab Content */}
+        <div
+          id="request-detail-panel"
+          role="tabpanel"
+          aria-labelledby={`request-tab-${activeTab}`}
+          tabIndex={0}
+          className="min-h-0 flex-1 overflow-y-auto focus-visible:outline-none"
+        >
           <div className="space-y-6 p-4 sm:p-5">
             {activeTab === "overview" && (
               <>
+                {/* Latency Breakdown */}
                 <section aria-labelledby="latency-title">
-                  <div className="mb-3">
-                    <h3
-                      id="latency-title"
-                      className="font-label-sm font-semibold uppercase tracking-wide text-text-secondary"
-                    >
-                      Latency Breakdown
-                    </h3>
-                  </div>
+                  <h3
+                    id="latency-title"
+                    className="mb-3 font-label-sm font-semibold uppercase tracking-wide text-text-secondary"
+                  >
+                    Latency Breakdown
+                  </h3>
 
-                  <div className="space-y-3">
+                  <div className="space-y-3.5">
                     {waterfallSegments.map((segment) => {
                       const percentage = totalTime
                         ? Math.max(
@@ -331,7 +349,7 @@ export const RequestDetailDrawer: React.FC<RequestDetailDrawerProps> = ({
                         <div key={segment.id}>
                           <div
                             className={cn(
-                              "mb-1 flex items-center justify-between gap-3 font-label-sm",
+                              "mb-1.5 flex items-center justify-between gap-3 font-label-sm",
                               isTimeout ? "text-danger" : "text-text-secondary",
                             )}
                           >
@@ -357,6 +375,7 @@ export const RequestDetailDrawer: React.FC<RequestDetailDrawerProps> = ({
                   </div>
                 </section>
 
+                {/* Request URL */}
                 <section aria-labelledby="request-url-title">
                   <div className="mb-2 flex items-center justify-between gap-3">
                     <h3
@@ -369,7 +388,7 @@ export const RequestDetailDrawer: React.FC<RequestDetailDrawerProps> = ({
                     <button
                       type="button"
                       onClick={handleCopyUrl}
-                      className="inline-flex shrink-0 items-center gap-1 font-label-sm text-accent transition-colors hover:text-text-primary focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent"
+                      className="inline-flex shrink-0 items-center gap-1 font-label-sm font-medium text-accent transition-colors hover:text-text-primary focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent"
                     >
                       {copiedUrl ? (
                         <>
@@ -385,11 +404,12 @@ export const RequestDetailDrawer: React.FC<RequestDetailDrawerProps> = ({
                     </button>
                   </div>
 
-                  <div className="rounded-md border border-border-default bg-surface-muted px-3 py-2.5 font-code-inline leading-5 text-text-primary break-all select-all">
+                  <div className="break-all select-all rounded-md border border-border-default bg-surface-muted px-3 py-2.5 font-code-inline leading-5 text-text-primary">
                     {request.url}
                   </div>
                 </section>
 
+                {/* Error Summary */}
                 {request.errorSummary && (
                   <section aria-labelledby="error-summary-title">
                     <h3
@@ -399,12 +419,13 @@ export const RequestDetailDrawer: React.FC<RequestDetailDrawerProps> = ({
                       Error Trace Summary
                     </h3>
 
-                    <div className="rounded-md border border-danger/20 bg-danger/[0.04] px-3 py-2.5 font-code-inline leading-5 text-danger break-words select-all">
+                    <div className="break-words select-all rounded-md border border-danger/20 bg-danger/[0.04] px-3 py-2.5 font-code-inline leading-5 text-danger">
                       {request.errorSummary}
                     </div>
                   </section>
                 )}
 
+                {/* Request Metadata */}
                 <section
                   aria-label="Request metadata"
                   className="border-t border-border-default pt-4"
@@ -423,7 +444,7 @@ export const RequestDetailDrawer: React.FC<RequestDetailDrawerProps> = ({
                       <dt className="font-label-sm text-text-secondary">
                         Region / Provider
                       </dt>
-                      <dd className="mt-1 break-words text-[12px] font-medium text-text-primary">
+                      <dd className="mt-1 break-words font-label-sm font-medium text-text-primary">
                         {request.region}
                       </dd>
                     </div>
@@ -450,6 +471,7 @@ export const RequestDetailDrawer: React.FC<RequestDetailDrawerProps> = ({
               </>
             )}
 
+            {/* Headers */}
             {activeTab === "headers" && (
               <section aria-labelledby="headers-title">
                 <div className="mb-3 flex items-center justify-between gap-3">
@@ -468,7 +490,7 @@ export const RequestDetailDrawer: React.FC<RequestDetailDrawerProps> = ({
                 <div className="overflow-x-auto rounded-md border border-border-default bg-surface-muted p-3">
                   {request.headers &&
                   Object.keys(request.headers).length > 0 ? (
-                    <div className="space-y-2.5">
+                    <div className="space-y-3">
                       {Object.entries(request.headers).map(([key, value]) => (
                         <div
                           key={key}
@@ -484,7 +506,7 @@ export const RequestDetailDrawer: React.FC<RequestDetailDrawerProps> = ({
                       ))}
                     </div>
                   ) : (
-                    <p className="font-code-inline text-[11px] text-text-secondary">
+                    <p className="font-code-inline text-text-secondary">
                       No custom headers recorded.
                     </p>
                   )}
@@ -492,16 +514,15 @@ export const RequestDetailDrawer: React.FC<RequestDetailDrawerProps> = ({
               </section>
             )}
 
+            {/* Payload */}
             {activeTab === "payload" && (
               <section aria-labelledby="payload-title">
-                <div className="mb-3">
-                  <h3
-                    id="payload-title"
-                    className="font-label-sm font-semibold uppercase tracking-wide text-text-secondary"
-                  >
-                    Request Payload
-                  </h3>
-                </div>
+                <h3
+                  id="payload-title"
+                  className="mb-3 font-label-sm font-semibold uppercase tracking-wide text-text-secondary"
+                >
+                  Request Payload
+                </h3>
 
                 <pre className="overflow-x-auto whitespace-pre-wrap break-words rounded-md border border-border-default bg-surface-muted p-3 font-code-inline leading-5 text-text-primary">
                   {request.payload || "// No request body"}
@@ -509,16 +530,15 @@ export const RequestDetailDrawer: React.FC<RequestDetailDrawerProps> = ({
               </section>
             )}
 
+            {/* Timeline */}
             {activeTab === "timeline" && (
               <section aria-labelledby="timeline-title">
-                <div className="mb-4">
-                  <h3
-                    id="timeline-title"
-                    className="font-label-sm font-semibold uppercase tracking-wide text-text-secondary"
-                  >
-                    Execution Timeline
-                  </h3>
-                </div>
+                <h3
+                  id="timeline-title"
+                  className="mb-4 font-label-sm font-semibold uppercase tracking-wide text-text-secondary"
+                >
+                  Execution Timeline
+                </h3>
 
                 <div className="ml-2 border-l border-border-default pl-5">
                   {(
@@ -559,18 +579,18 @@ export const RequestDetailDrawer: React.FC<RequestDetailDrawerProps> = ({
 
                         <div className="flex min-w-0 items-start justify-between gap-4">
                           <div className="min-w-0">
-                            <div className="text-[12px] font-semibold text-text-primary">
+                            <div className="font-label-sm font-semibold text-text-primary">
                               {event.phase}
                             </div>
 
                             {event.details && (
-                              <p className="mt-0.5 break-words font-code-inline text-[11px] leading-4 text-text-secondary">
+                              <p className="mt-1 break-words font-code-inline leading-4 text-text-secondary">
                                 {event.details}
                               </p>
                             )}
                           </div>
 
-                          <span className="shrink-0 font-code-inline text-[11px] text-text-secondary">
+                          <span className="shrink-0 font-code-inline text-text-secondary">
                             {event.time}
                           </span>
                         </div>
@@ -583,6 +603,7 @@ export const RequestDetailDrawer: React.FC<RequestDetailDrawerProps> = ({
           </div>
         </div>
 
+        {/* Footer Actions */}
         <footer className="flex shrink-0 gap-2 border-t border-border-default bg-surface px-4 py-3 sm:px-5">
           <Button
             variant="secondary"

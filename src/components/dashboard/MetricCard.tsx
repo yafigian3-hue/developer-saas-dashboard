@@ -1,4 +1,5 @@
 import type { FC, ReactNode } from "react";
+import { ArrowDownRight, ArrowUpRight, Minus } from "lucide-react";
 import { cn } from "../../lib/utils";
 
 type SparklineType = "sparkline-up" | "sparkline-down" | "sparkline-latency";
@@ -10,44 +11,46 @@ export interface MetricCardProps {
   value: ReactNode;
   subtitle: ReactNode;
   trend?: "up" | "down";
-
   chartType?: SparklineType | "bars";
   variant?: "primary" | "secondary";
   className?: string;
 }
 
-const SPARKLINE: Record<SparklineType, { d: string; x: number; y: number }> = {
-  "sparkline-up": { d: "M2 18 L12 14 L22 16 L32 9 L42 12 L52 4", x: 52, y: 4 },
-  "sparkline-down": {
-    d: "M2 5 L12 9 L22 6 L32 13 L42 10 L52 17",
-    x: 52,
-    y: 17,
-  },
-  "sparkline-latency": {
-    d: "M2 16 L12 14 L22 15 L32 9 L42 11 L52 7",
-    x: 52,
-    y: 7,
-  },
+const SPARKLINE: Record<SparklineType, string> = {
+  "sparkline-up": "M2 18 L12 14 L22 16 L32 9 L42 12 L52 4",
+  "sparkline-down": "M2 5 L12 9 L22 6 L32 13 L42 10 L52 17",
+  "sparkline-latency": "M2 16 L12 14 L22 15 L32 9 L42 11 L52 7",
 };
 
 const Sparkline: FC<{ type: SparklineType }> = ({ type }) => {
-  const s = SPARKLINE[type];
+  const isChartRising = type === "sparkline-up" || type === "sparkline-latency";
+  const endY = type === "sparkline-down" ? 17 : type === "sparkline-up" ? 4 : 7;
+  const chartColor = isChartRising ? "text-success" : "text-danger";
+
   return (
     <svg
       viewBox="0 0 54 22"
-      className="h-6 w-18 shrink-0 overflow-visible"
+      className="hidden h-6 w-14 shrink-0 overflow-visible sm:block"
       aria-hidden="true"
     >
       <path
-        d={s.d}
+        d={SPARKLINE[type]}
         fill="none"
-        strokeWidth="1.5"
+        strokeWidth="1.8"
         strokeLinecap="round"
         strokeLinejoin="round"
         vectorEffect="non-scaling-stroke"
-        className="stroke-text-secondary/50"
+        className={cn(
+          "transition-colors duration-200",
+          isChartRising ? "stroke-success" : "stroke-danger",
+        )}
       />
-      <circle cx={s.x} cy={s.y} r="2" className="fill-text-primary" />
+      <circle
+        cx="52"
+        cy={endY}
+        r="2"
+        className={cn("fill-current", chartColor)}
+      />
     </svg>
   );
 };
@@ -63,72 +66,52 @@ export const MetricCard: FC<MetricCardProps> = ({
   variant = "secondary",
   className,
 }) => {
+  const isPositive = badgeType === "positive";
   const isPrimary = variant === "primary";
-  const arrow = trend === "down" ? "↓" : badgeType === "neutral" ? null : "↑";
-  const sparkline =
-    isPrimary && chartType && chartType !== "bars" ? chartType : null;
+  const hasSparkline = chartType && chartType !== "bars";
+
+  const TrendIcon =
+    trend === "down" ? ArrowDownRight : trend === "up" ? ArrowUpRight : Minus;
 
   return (
     <article
       aria-label={title}
       className={cn(
-        "min-w-0",
-        isPrimary
-          ? "pb-4 pt-4.5 sm:py-5.5"
-          : "grid grid-cols-[1fr_auto] items-center gap-x-4 py-3.5 sm:block sm:py-5.5",
+        "flex min-w-0 flex-col rounded-lg border border-border-default bg-surface p-3 transition-colors duration-200 hover:border-text-secondary/30 sm:rounded-xl sm:p-4 xl:p-5",
+        isPrimary && "border-accent/20 bg-accent-soft/30",
         className,
       )}
     >
-      <p className="col-start-1 truncate text-[12.5px] text-text-secondary">
-        {title}
-      </p>
+      <div className="flex min-w-0 items-center justify-between gap-2">
+        <p className="min-w-0 truncate text-xs font-medium text-text-secondary sm:text-sm">
+          {title}
+        </p>
 
-      <div
-        className={cn(
-          isPrimary
-            ? "mt-2 flex items-end justify-between gap-4"
-            : "col-start-2 row-span-2 row-start-1 text-right sm:mt-2 sm:text-left",
-        )}
-      >
-        <div
-          className={cn(
-            "min-w-0 whitespace-nowrap font-semibold tabular-nums text-text-primary",
-            isPrimary
-              ? "text-[40px] leading-[1.1] tracking-[-0.04em] sm:text-[46px]"
-              : "text-[22px] leading-[1.1] tracking-tight sm:text-[28px]",
-          )}
-        >
-          {value}
-        </div>
-
-        {sparkline && (
-          <div className="mb-1.5 hidden sm:block">
-            <Sparkline type={sparkline} />
-          </div>
-        )}
+        {hasSparkline && <Sparkline type={chartType as SparklineType} />}
       </div>
 
-      <div className="col-start-1 mt-0.5 flex min-w-0 flex-wrap items-baseline gap-x-1.5 text-[12.5px] leading-snug text-text-secondary sm:mt-2">
-        <span
-          className={cn(
-            "font-medium tabular-nums",
-            badgeType === "positive" ? "text-success" : "text-text-secondary",
-          )}
-        >
-          {arrow && (
-            <>
-              <span aria-hidden="true">{arrow}</span>
-              <span className="sr-only">
-                {trend === "down" ? "Decreased" : "Increased"}
-              </span>{" "}
-            </>
-          )}
-          {badgeText}
-        </span>
-        <span aria-hidden="true" className="text-text-secondary/40">
-          ·
-        </span>
-        <span className="min-w-0">{subtitle}</span>
+      <div className="mt-3 min-w-0 sm:mt-4">
+        <div className="overflow-hidden font-sans text-xl font-semibold leading-tight tracking-tight text-text-primary sm:text-2xl xl:text-[30px]">
+          <span className="tabular-nums">{value}</span>
+        </div>
+
+        <div className="mt-2 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+          <span
+            className={cn(
+              "inline-flex shrink-0 items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] font-semibold leading-4",
+              isPositive
+                ? "bg-success/10 text-success"
+                : "bg-surface-muted text-text-secondary",
+            )}
+          >
+            <TrendIcon size={12} strokeWidth={2.2} aria-hidden="true" />
+            {badgeText}
+          </span>
+
+          <span className="min-w-0 text-xs leading-5 text-text-secondary">
+            {subtitle}
+          </span>
+        </div>
       </div>
     </article>
   );

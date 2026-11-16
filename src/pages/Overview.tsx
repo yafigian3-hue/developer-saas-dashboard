@@ -127,11 +127,9 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({
           onToggleLiveSync={handleToggleLiveSync}
         />
 
-        {/* auto-fit: jumlah kolom menyesuaikan lebar area konten (sidebar ikut dihitung),
-            bukan lebar layar, jadi tidak ada lagi layout 2x2 yang tanggung. */}
         <section
           aria-label="Ringkasan metrik"
-          className={`grid grid-cols-[repeat(auto-fit,minmax(200px,1fr))] ${GRID_GAP}`}
+          className="grid grid-cols-2 gap-2 sm:gap-4 lg:grid-cols-4 lg:gap-4 xl:gap-5"
         >
           {metrics.map(({ key, ...props }) => (
             <MetricCard key={key} {...props} />

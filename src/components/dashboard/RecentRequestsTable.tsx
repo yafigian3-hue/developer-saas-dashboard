@@ -18,10 +18,7 @@ type StatusFilter = "all" | "2xx" | "4xx" | "5xx";
 
 const ITEMS_PER_PAGE = 6;
 
-const statusFilters: Array<{
-  id: StatusFilter;
-  label: string;
-}> = [
+const statusFilters: Array<{ id: StatusFilter; label: string }> = [
   { id: "all", label: "All" },
   { id: "2xx", label: "2xx OK" },
   { id: "4xx", label: "4xx Warn" },
@@ -111,60 +108,64 @@ export const RecentRequestsTable: React.FC<RecentRequestsTableProps> = ({
   };
 
   return (
-    <section className="@container flex h-full min-w-0 flex-col overflow-hidden rounded-lg border border-border-default bg-surface">
-      <header className="border-b border-border-default px-4 py-4 sm:px-5">
-        <div className="flex min-w-0 flex-col gap-4 @2xl:flex-row @2xl:items-center @2xl:justify-between">
-          <div className="min-w-0">
-            <h2 className="text-base font-semibold tracking-tight text-text-primary">
-              Recent Requests
-            </h2>
+    <section
+      aria-label="Recent API requests"
+      className="@container flex h-full min-w-0 flex-col overflow-hidden rounded-xl border border-border-default bg-surface"
+    >
+      <header className="flex flex-col gap-3.5 border-b border-border-default px-3.5 py-4 sm:px-5 sm:py-4.5 @2xl:flex-row @2xl:items-center @2xl:justify-between">
+        <div className="min-w-0">
+          <h2 className="text-sm font-semibold tracking-tight text-text-primary sm:text-base">
+            Recent Requests
+          </h2>
+          <p className="mt-1 text-[11px] text-text-secondary sm:text-xs">
+            Latest API activity across your projects
+          </p>
+        </div>
 
-            <p className="mt-0.5 truncate text-xs text-text-secondary">
-              Latest API activity across your projects
-            </p>
+        <div className="flex min-w-0 flex-col gap-2.5 @md:flex-row @md:items-center @2xl:shrink-0">
+          <div className="min-w-0 @md:w-44 @2xl:w-48">
+            <Input
+              icon={<Filter className="h-3.5 w-3.5" />}
+              type="text"
+              value={pathFilter}
+              onChange={handlePathFilterChange}
+              placeholder="Filter path..."
+              aria-label="Filter requests by path, ID, or project"
+              className="w-full"
+            />
           </div>
 
-          <div className="flex min-w-0 flex-col gap-2.5 @md:flex-row @md:items-center @2xl:shrink-0">
-            <div className="min-w-0 @md:w-44 @2xl:w-48">
-              <Input
-                icon={<Filter className="h-3.5 w-3.5" />}
-                type="text"
-                value={pathFilter}
-                onChange={handlePathFilterChange}
-                placeholder="Filter path..."
-                aria-label="Filter requests by path, ID, or project"
-                className="w-full"
-              />
-            </div>
+          <div
+            className="grid grid-cols-4 gap-1 rounded-lg bg-surface-muted p-1"
+            aria-label="Filter by status"
+          >
+            {statusFilters.map((filter) => {
+              const isActive = activeFilter === filter.id;
 
-            <div className="flex min-w-0 max-w-full items-center gap-2 overflow-x-auto pb-0.5">
-              {statusFilters.map((filter) => {
-                const isActive = activeFilter === filter.id;
-
-                return (
-                  <button
-                    key={filter.id}
-                    type="button"
-                    onClick={() => handleFilterChange(filter.id)}
-                    aria-pressed={isActive}
-                    className={cn(
-                      "shrink-0 rounded-md border px-3 py-1.5 font-label-sm transition-colors duration-150",
-                      "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent",
-                      isActive
-                        ? "border-accent bg-accent font-semibold text-white hover:bg-accent/90"
-                        : "border-border-default bg-surface text-text-secondary hover:bg-surface-muted hover:text-text-primary",
-                    )}
-                  >
-                    {filter.label}
-                  </button>
-                );
-              })}
-            </div>
+              return (
+                <button
+                  key={filter.id}
+                  type="button"
+                  onClick={() => handleFilterChange(filter.id)}
+                  aria-pressed={isActive}
+                  className={cn(
+                    "inline-flex h-7 items-center justify-center rounded-md px-1.5 text-[10px] font-medium transition-colors duration-150 sm:px-2 sm:text-[11px]",
+                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1",
+                    isActive
+                      ? "bg-surface text-accent shadow-sm"
+                      : "text-text-secondary hover:text-text-primary",
+                  )}
+                >
+                  {filter.label}
+                </button>
+              );
+            })}
           </div>
         </div>
       </header>
 
-      <ul className="block divide-y divide-border-default/60 @xl:hidden">
+      {/* Mobile request list */}
+      <ul className="divide-y divide-border-default/60 @xl:hidden">
         {paginatedRequests.map((request) => {
           const isSelected = request.id === selectedRequestId;
           const isError = request.status >= 500;
@@ -178,17 +179,17 @@ export const RecentRequestsTable: React.FC<RecentRequestsTableProps> = ({
                 onClick={() => onSelectRequest(request)}
                 onKeyDown={(event) => handleRequestKeyDown(event, request)}
                 aria-label={`Inspect request ${request.id}`}
+                aria-pressed={isSelected}
                 className={cn(
-                  "cursor-pointer px-4 py-3 outline-none transition-colors duration-150",
-                  "hover:bg-surface-muted focus-visible:bg-surface-muted focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-accent",
+                  "cursor-pointer px-3.5 py-3 outline-none transition-colors duration-150 sm:px-5",
+                  "hover:bg-surface-muted focus-visible:bg-surface-muted focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent",
                   isSelected && "bg-accent-soft/60 hover:bg-accent-soft/80",
                 )}
               >
-                <div className="flex min-w-0 items-center justify-between gap-2">
+                <div className="flex min-w-0 items-center justify-between gap-2.5">
                   <div className="flex min-w-0 items-center gap-2">
                     <MethodBadge method={request.method} />
-
-                    <span className="truncate font-code-inline text-xs font-medium text-text-primary">
+                    <span className="truncate font-code-inline text-[11px] font-medium text-text-primary sm:text-xs">
                       {request.endpoint}
                     </span>
                   </div>
@@ -199,14 +200,14 @@ export const RecentRequestsTable: React.FC<RecentRequestsTableProps> = ({
                   />
                 </div>
 
-                <div className="mt-1.5 flex min-w-0 items-center justify-between gap-2 font-code-inline text-[11px] text-text-secondary">
-                  <span className="truncate">
+                <div className="mt-2 flex min-w-0 items-center justify-between gap-2">
+                  <span className="min-w-0 truncate font-code-inline text-[10px] text-text-secondary sm:text-[11px]">
                     {request.time} · {request.project}
                   </span>
 
                   <span
                     className={cn(
-                      "shrink-0",
+                      "shrink-0 font-code-inline text-[10px] tabular-nums sm:text-[11px]",
                       isError
                         ? "font-semibold text-danger"
                         : isWarning
@@ -223,12 +224,13 @@ export const RecentRequestsTable: React.FC<RecentRequestsTableProps> = ({
         })}
 
         {paginatedRequests.length === 0 && (
-          <li className="px-4 py-10 text-center font-code-inline text-[11px] text-text-secondary">
+          <li className="px-4 py-10 text-center text-xs text-text-secondary">
             No requests match the current filters.
           </li>
         )}
       </ul>
 
+      {/* Desktop request table */}
       <div className="hidden min-w-0 @xl:block">
         <div className="min-w-0 overflow-x-auto">
           <table className="w-full min-w-[620px] table-fixed border-collapse text-left">
@@ -244,37 +246,23 @@ export const RecentRequestsTable: React.FC<RecentRequestsTableProps> = ({
             </colgroup>
 
             <thead>
-              <tr className="border-b border-border-default bg-surface-muted font-label-sm uppercase tracking-wider text-text-secondary">
-                <th
-                  scope="col"
-                  className="whitespace-nowrap px-4 py-2.5 font-semibold"
-                >
+              <tr className="border-b border-border-default bg-surface-muted text-[10px] font-semibold uppercase tracking-wider text-text-secondary">
+                <th scope="col" className="whitespace-nowrap px-4 py-3">
                   Time (UTC)
                 </th>
-
-                <th scope="col" className="px-4 py-2.5 font-semibold">
+                <th scope="col" className="px-4 py-3">
                   Method
                 </th>
-
-                <th scope="col" className="px-4 py-2.5 font-semibold">
+                <th scope="col" className="px-4 py-3">
                   Endpoint
                 </th>
-
-                <th scope="col" className="px-4 py-2.5 font-semibold">
+                <th scope="col" className="px-4 py-3">
                   Status
                 </th>
-
-                <th
-                  scope="col"
-                  className="px-4 py-2.5 text-right font-semibold"
-                >
+                <th scope="col" className="px-4 py-3 text-right">
                   Latency
                 </th>
-
-                <th
-                  scope="col"
-                  className="hidden px-4 py-2.5 font-semibold @3xl:table-cell"
-                >
+                <th scope="col" className="hidden px-4 py-3 @3xl:table-cell">
                   Project
                 </th>
               </tr>
@@ -293,25 +281,26 @@ export const RecentRequestsTable: React.FC<RecentRequestsTableProps> = ({
                     onClick={() => onSelectRequest(request)}
                     onKeyDown={(event) => handleRequestKeyDown(event, request)}
                     aria-label={`Inspect request ${request.id}`}
+                    aria-selected={isSelected}
                     className={cn(
                       "cursor-pointer outline-none transition-colors duration-150",
-                      "hover:bg-surface-muted focus-visible:bg-surface-muted focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-accent",
+                      "hover:bg-surface-muted focus-visible:bg-surface-muted focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent",
                       isSelected && "bg-accent-soft/60 hover:bg-accent-soft/80",
                     )}
                   >
-                    <td className="whitespace-nowrap px-4 py-3 font-code-inline text-text-primary">
+                    <td className="whitespace-nowrap px-4 py-3.5 font-code-inline text-text-primary">
                       {request.time}
                     </td>
 
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-3.5">
                       <MethodBadge method={request.method} />
                     </td>
 
-                    <td className="truncate px-4 py-3 font-code-inline font-medium text-text-primary">
+                    <td className="truncate px-4 py-3.5 font-code-inline font-medium text-text-primary">
                       {request.endpoint}
                     </td>
 
-                    <td className="overflow-hidden px-4 py-3">
+                    <td className="overflow-hidden px-4 py-3.5">
                       <StatusBadge
                         status={request.status}
                         text={request.statusText}
@@ -320,7 +309,7 @@ export const RecentRequestsTable: React.FC<RecentRequestsTableProps> = ({
 
                     <td
                       className={cn(
-                        "whitespace-nowrap px-4 py-3 text-right font-code-inline",
+                        "whitespace-nowrap px-4 py-3.5 text-right font-code-inline tabular-nums",
                         isError
                           ? "font-semibold text-danger"
                           : isWarning
@@ -331,7 +320,7 @@ export const RecentRequestsTable: React.FC<RecentRequestsTableProps> = ({
                       {request.latency.toLocaleString()}ms
                     </td>
 
-                    <td className="hidden truncate px-4 py-3 text-text-secondary @3xl:table-cell">
+                    <td className="hidden truncate px-4 py-3.5 text-text-secondary @3xl:table-cell">
                       {request.project}
                     </td>
                   </tr>
@@ -342,7 +331,7 @@ export const RecentRequestsTable: React.FC<RecentRequestsTableProps> = ({
                 <tr>
                   <td
                     colSpan={6}
-                    className="px-4 py-10 text-center font-code-inline text-[11px] text-text-secondary"
+                    className="px-4 py-10 text-center text-xs text-text-secondary"
                   >
                     No requests match the current filters.
                   </td>

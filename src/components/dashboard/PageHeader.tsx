@@ -1,5 +1,5 @@
 import type { FC } from "react";
-import { CalendarDays, ChevronDown } from "lucide-react";
+import { Activity, CalendarDays, ChevronDown } from "lucide-react";
 import { cn } from "../../lib/utils";
 
 export interface PageHeaderProps {
@@ -25,7 +25,7 @@ const DATE_RANGES = [
 ] as const;
 
 const controlBase =
-  "inline-flex h-9 items-center rounded-md border border-border-default bg-surface text-[12.5px] text-text-primary transition-colors duration-150 hover:border-text-secondary/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent sm:h-8";
+  "inline-flex h-9 items-center rounded-lg border border-border-default bg-surface px-3 text-xs font-medium text-text-primary transition-colors hover:border-text-secondary/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-surface";
 
 export const PageHeader: FC<PageHeaderProps> = ({
   dateRange,
@@ -36,16 +36,29 @@ export const PageHeader: FC<PageHeaderProps> = ({
   onToggleLiveSync,
 }) => {
   return (
-    <header className="flex min-w-0 flex-col gap-4 lg:flex-row lg:items-center lg:justify-between lg:gap-6">
+    <header className="flex min-w-0 flex-col gap-5 border-b border-border-default pb-5 sm:gap-4 lg:flex-row lg:items-center lg:justify-between">
       <div className="min-w-0">
-        <h1 className="text-[27px] font-semibold leading-tight tracking-[-0.035em] text-text-primary sm:text-[30px]">
+        <div className="mb-1.5 flex items-center gap-2">
+          <span
+            className="h-1.5 w-1.5 rounded-full bg-accent"
+            aria-hidden="true"
+          />
+          <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-text-secondary">
+            Workspace / Analytics
+          </span>
+        </div>
+
+        <h1 className="text-[28px] font-semibold leading-tight tracking-[-0.045em] text-text-primary sm:text-[32px]">
           Overview
         </h1>
+
+        <p className="mt-1 text-xs leading-relaxed text-text-secondary sm:text-[13px]">
+          Monitor API performance, traffic, and gateway health.
+        </p>
       </div>
 
-      <div className="flex min-w-0 flex-wrap items-center gap-2">
-        {/* Environment */}
-        <div className="relative min-w-0 flex-1 sm:flex-none">
+      <div className="grid min-w-0 grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-center lg:justify-end">
+        <div className="relative min-w-0">
           <span
             className="pointer-events-none absolute left-3 top-1/2 h-1.5 w-1.5 -translate-y-1/2 rounded-full bg-success"
             aria-hidden="true"
@@ -57,7 +70,7 @@ export const PageHeader: FC<PageHeaderProps> = ({
             aria-label="Environment"
             className={cn(
               controlBase,
-              "w-full min-w-0 cursor-pointer appearance-none pl-6 pr-8 font-mono text-[11.5px] sm:min-w-41",
+              "h-10 w-full cursor-pointer appearance-none pl-6 pr-8 font-mono text-[10px] sm:h-9 sm:w-auto sm:min-w-40 sm:text-[11px]",
             )}
           >
             {ENVIRONMENTS.map((env) => (
@@ -68,13 +81,12 @@ export const PageHeader: FC<PageHeaderProps> = ({
           </select>
 
           <ChevronDown
-            className="pointer-events-none absolute right-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-text-secondary/60"
+            className="pointer-events-none absolute right-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-text-secondary"
             aria-hidden="true"
           />
         </div>
 
-        {/* Date range */}
-        <div className="relative min-w-0 flex-1 sm:flex-none">
+        <div className="relative min-w-0">
           <CalendarDays
             className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-text-secondary"
             aria-hidden="true"
@@ -86,7 +98,7 @@ export const PageHeader: FC<PageHeaderProps> = ({
             aria-label="Date range"
             className={cn(
               controlBase,
-              "w-full min-w-0 cursor-pointer appearance-none pl-8 pr-8 sm:min-w-35",
+              "h-10 w-full cursor-pointer appearance-none pl-8 pr-7 sm:h-9 sm:w-auto sm:min-w-36",
             )}
           >
             {DATE_RANGES.map((range) => (
@@ -97,33 +109,32 @@ export const PageHeader: FC<PageHeaderProps> = ({
           </select>
 
           <ChevronDown
-            className="pointer-events-none absolute right-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-text-secondary/60"
+            className="pointer-events-none absolute right-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-text-secondary"
             aria-hidden="true"
           />
         </div>
 
-        {/* Live sync */}
         <button
           type="button"
           onClick={onToggleLiveSync}
           aria-pressed={isLiveSyncing}
           title={isLiveSyncing ? "Live sync enabled" : "Live sync disabled"}
           className={cn(
-            controlBase,
-            "shrink-0 gap-2 px-3",
+            "col-span-2 inline-flex h-10 items-center justify-center gap-2 rounded-lg border px-3 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-surface sm:col-span-1 sm:h-9",
             isLiveSyncing
-              ? "border-accent/30 bg-accent-soft text-accent"
-              : "text-text-secondary hover:text-text-primary",
+              ? "border-accent/25 bg-accent-soft text-accent"
+              : "border-border-default bg-surface text-text-secondary hover:border-text-secondary/40 hover:text-text-primary",
           )}
         >
+          <Activity size={14} aria-hidden="true" />
+          <span>Live sync</span>
           <span
             className={cn(
-              "h-1.5 w-1.5 shrink-0 rounded-full",
-              isLiveSyncing ? "bg-success" : "bg-text-secondary/50",
+              "h-1.5 w-1.5 rounded-full",
+              isLiveSyncing ? "bg-success" : "bg-text-secondary/40",
             )}
             aria-hidden="true"
           />
-          <span>Live sync</span>
         </button>
       </div>
     </header>

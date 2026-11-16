@@ -12,21 +12,9 @@ interface NewProjectModalProps {
 }
 
 const environmentOptions = [
-  {
-    value: "production",
-    label: "Production",
-    region: "us-east-1",
-  },
-  {
-    value: "staging",
-    label: "Staging",
-    region: "us-west-2",
-  },
-  {
-    value: "eu-production",
-    label: "EU Production",
-    region: "eu-central-1",
-  },
+  { value: "production", label: "Production", region: "us-east-1" },
+  { value: "staging", label: "Staging", region: "us-west-2" },
+  { value: "eu-production", label: "EU Production", region: "eu-central-1" },
 ] as const;
 
 const createSlug = (value: string): string =>
@@ -38,6 +26,9 @@ const createSlug = (value: string): string =>
     .replace(/-+/g, "-");
 
 type ErrorField = "name" | "slug" | null;
+
+const labelClass = "mb-1.5 block font-label-sm font-medium text-text-primary";
+const helperClass = "mt-1.5 font-label-sm text-text-secondary";
 
 export const NewProjectModal: React.FC<NewProjectModalProps> = ({
   isOpen,
@@ -129,7 +120,6 @@ export const NewProjectModal: React.FC<NewProjectModalProps> = ({
           <Button variant="ghost" size="sm" onClick={onClose}>
             Cancel
           </Button>
-
           <Button variant="primary" size="sm" onClick={handleCreate}>
             Create Project
           </Button>
@@ -137,11 +127,9 @@ export const NewProjectModal: React.FC<NewProjectModalProps> = ({
       }
     >
       <form id="new-project-form" onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <label
-            htmlFor="project-name"
-            className="mb-1.5 block text-[12px] font-medium text-text-primary"
-          >
+        {/* Project Name */}
+        <div className="min-w-0">
+          <label htmlFor="project-name" className={labelClass}>
             Project Name
           </label>
 
@@ -151,25 +139,18 @@ export const NewProjectModal: React.FC<NewProjectModalProps> = ({
             value={name}
             onChange={(event) => handleNameChange(event.target.value)}
             placeholder="e.g. Billing Microservice"
-            aria-describedby={`project-name-help${
-              nameHasError ? " project-form-error" : ""
-            }`}
+            aria-describedby={`project-name-help${nameHasError ? " project-form-error" : ""}`}
             aria-invalid={nameHasError}
           />
 
-          <p
-            id="project-name-help"
-            className="mt-1.5 text-[11px] leading-4 text-text-secondary"
-          >
+          <p id="project-name-help" className={helperClass}>
             Use a clear name that identifies the service or API.
           </p>
         </div>
 
-        <div>
-          <label
-            htmlFor="project-slug"
-            className="mb-1.5 block text-[12px] font-medium text-text-primary"
-          >
+        {/* Endpoint Slug */}
+        <div className="min-w-0">
+          <label htmlFor="project-slug" className={labelClass}>
             Endpoint Slug
           </label>
 
@@ -180,25 +161,18 @@ export const NewProjectModal: React.FC<NewProjectModalProps> = ({
             onChange={(event) => handleSlugChange(event.target.value)}
             placeholder="billing-svc"
             className="font-code-inline"
-            aria-describedby={`project-slug-help${
-              slugHasError ? " project-form-error" : ""
-            }`}
+            aria-describedby={`project-slug-help${slugHasError ? " project-form-error" : ""}`}
             aria-invalid={slugHasError}
           />
 
-          <p
-            id="project-slug-help"
-            className="mt-1.5 text-[11px] leading-4 text-text-secondary"
-          >
+          <p id="project-slug-help" className={helperClass}>
             Used as the project identifier in API routes and telemetry.
           </p>
         </div>
 
-        <div>
-          <label
-            htmlFor="project-environment"
-            className="mb-1.5 block text-[12px] font-medium text-text-primary"
-          >
+        {/* Environment */}
+        <div className="min-w-0">
+          <label htmlFor="project-environment" className={labelClass}>
             Environment
           </label>
 
@@ -207,7 +181,7 @@ export const NewProjectModal: React.FC<NewProjectModalProps> = ({
             value={environment}
             onChange={(event) => setEnvironment(event.target.value)}
             className={cn(
-              "h-8 w-full rounded-md border border-border-default bg-surface px-3 text-[12px] text-text-primary",
+              "h-8 w-full rounded-md border border-border-default bg-surface px-3 font-label-sm text-text-primary",
               "transition-colors duration-150 hover:bg-surface-muted",
               "focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent",
             )}
@@ -220,11 +194,9 @@ export const NewProjectModal: React.FC<NewProjectModalProps> = ({
           </select>
         </div>
 
-        <div>
-          <label
-            htmlFor="project-description"
-            className="mb-1.5 block text-[12px] font-medium text-text-primary"
-          >
+        {/* Description */}
+        <div className="min-w-0">
+          <label htmlFor="project-description" className={labelClass}>
             Description
           </label>
 
@@ -238,23 +210,24 @@ export const NewProjectModal: React.FC<NewProjectModalProps> = ({
             }}
             placeholder="Brief description of this API service..."
             className={cn(
-              "min-h-[80px] w-full resize-y rounded-md border border-border-default bg-surface px-3 py-2 text-[12px] leading-5 text-text-primary",
+              "min-h-[80px] w-full resize-y rounded-md border border-border-default bg-surface px-3 py-2 font-label-sm leading-5 text-text-primary",
               "placeholder:text-text-secondary/70",
               "transition-colors duration-150 hover:border-border-default",
               "focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent",
             )}
           />
 
-          <p className="mt-1.5 text-[11px] leading-4 text-text-secondary">
+          <p className={helperClass}>
             Optional. Keep it short and focused on the service purpose.
           </p>
         </div>
 
+        {/* Validation Error */}
         {error && (
           <div
             id="project-form-error"
             role="alert"
-            className="border-l-2 border-danger bg-danger/[0.04] px-3 py-2 text-[12px] leading-4 text-danger"
+            className="border-l-2 border-danger bg-danger/[0.04] px-3 py-2 font-label-sm leading-5 text-danger"
           >
             {error}
           </div>

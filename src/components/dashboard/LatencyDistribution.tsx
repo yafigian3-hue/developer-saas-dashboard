@@ -16,14 +16,17 @@ const distribution: DistributionItem[] = [
 const toneStyles = {
   success: {
     bar: "bg-success",
+    dot: "bg-success",
     text: "text-success",
   },
   warning: {
     bar: "bg-warning",
+    dot: "bg-warning",
     text: "text-warning",
   },
   danger: {
     bar: "bg-danger",
+    dot: "bg-danger",
     text: "text-danger",
   },
 } as const;
@@ -32,12 +35,11 @@ export const LatencyDistribution: React.FC = () => {
   return (
     <section className="min-w-0 rounded-lg border border-border-default bg-surface p-4 sm:p-5">
       {/* Header */}
-      <div className="mb-4 flex min-w-0 items-start justify-between gap-3">
+      <div className="mb-5 flex min-w-0 items-start justify-between gap-3">
         <div className="min-w-0">
           <h2 className="truncate text-[16px] font-semibold tracking-tight text-text-primary">
             Latency Distribution
           </h2>
-
           <p className="mt-0.5 font-label-sm text-text-secondary">
             Global response times
           </p>
@@ -54,30 +56,35 @@ export const LatencyDistribution: React.FC = () => {
         role="img"
         aria-label="Latency distribution: 74 percent under 100 milliseconds, 21 percent between 100 and 300 milliseconds, 5 percent above 300 milliseconds"
       >
-        <div className="grid h-3 w-full grid-cols-[74fr_21fr_5fr] overflow-hidden rounded-sm bg-surface-muted">
+        <div className="grid h-3 w-full grid-cols-[74fr_21fr_5fr] gap-1 overflow-hidden rounded-sm bg-surface-muted">
           {distribution.map((item) => (
             <div
               key={item.label}
-              className={toneStyles[item.tone].bar}
-              style={{ minWidth: item.percentage > 0 ? "3px" : undefined }}
+              className={`h-full min-w-0 ${toneStyles[item.tone].bar}`}
             />
           ))}
         </div>
       </div>
 
       {/* Distribution Metrics */}
-      <div className="mt-3 grid grid-cols-3 gap-2">
+      <div className="mt-4 grid grid-cols-3 gap-2">
         {distribution.map((item) => (
           <div
             key={item.label}
             className="min-w-0 rounded border border-border-default bg-surface-muted px-2 py-2.5 text-center"
           >
-            <span className="block truncate font-label-sm text-text-secondary">
-              {item.label}
-            </span>
+            <div className="flex min-w-0 items-center justify-center gap-1.5">
+              <span
+                className={`h-1.5 w-1.5 shrink-0 rounded-full ${toneStyles[item.tone].dot}`}
+                aria-hidden="true"
+              />
+              <span className="truncate font-label-sm text-text-secondary">
+                {item.label}
+              </span>
+            </div>
 
             <span
-              className={`mt-0.5 block font-label-md font-semibold ${toneStyles[item.tone].text}`}
+              className={`mt-1 block font-label-md font-semibold ${toneStyles[item.tone].text}`}
             >
               {item.percentage}%
             </span>

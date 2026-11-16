@@ -22,6 +22,15 @@ const EXPORT_COLUMNS = [
   { key: "project", label: "Project" },
 ] as const;
 
+const CSV_HEADERS = [
+  "Time",
+  "Method",
+  "Endpoint",
+  "Status",
+  "Latency (ms)",
+  "Project",
+];
+
 const formatOptions: Array<{
   id: ExportFormat;
   label: string;
@@ -42,22 +51,31 @@ const formatOptions: Array<{
   },
   {
     id: "print",
-    label: "Print / Save as PDF",
-    description: "Open a printable report",
+    label: "Print / PDF",
+    description: "Printable request report",
     icon: FileText,
   },
 ];
 
 const REPORT_THEME = {
-  textPrimary: "#161A18",
-  textSecondary: "#68716B",
+  textPrimary: "#172033",
+  textSecondary: "#667085",
+  accent: "#315EFB",
   surface: "#FFFFFF",
-  surfaceMuted: "#F0F1EE",
-  border: "#D9DDD7",
+  surfaceMuted: "#F5F7FA",
+  border: "#E5EAF1",
 } as const;
 
-const toCsvField = (value: string | number): string =>
-  `"${String(value).replace(/"/g, '""')}"`;
+const toCsvField = (value: string | number): string => {
+  let normalized = String(value);
+
+  // Prevent spreadsheet formula injection from untrusted string values.
+  if (typeof value === "string" && /^[\t\r ]*[=+\-@]/.test(normalized)) {
+    normalized = `'${normalized}`;
+  }
+
+  return `"${normalized.replace(/"/g, '""')}"`;
+};
 
 const escapeHtml = (value: string | number): string =>
   String(value).replace(
@@ -82,26 +100,9 @@ const getExportRow = (request: ApiRequest): Array<string | number> => [
 ];
 
 const buildCsv = (requests: ApiRequest[]): string => {
-  const headers = EXPORT_COLUMNS.map((column) => {
-    switch (column.key) {
-      case "time":
-        return "Time";
-      case "method":
-        return "Method";
-      case "endpoint":
-        return "Endpoint";
-      case "status":
-        return "Status";
-      case "latency":
-        return "Latency (ms)";
-      case "project":
-        return "Project";
-    }
-  });
-
   const rows = requests.map(getExportRow);
 
-  return [headers, ...rows]
+  return [CSV_HEADERS, ...rows]
     .map((row) => row.map(toCsvField).join(","))
     .join("\r\n");
 };
@@ -171,10 +172,7 @@ const openPrintableReport = (requests: ApiRequest[]): boolean => {
     <html lang="en">
       <head>
         <meta charset="utf-8" />
-        <meta
-          name="viewport"
-          content="width=device-width, initial-scale=1"
-        />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
         <title>Operational Request Report</title>
 
         <style>
@@ -192,12 +190,7 @@ const openPrintableReport = (requests: ApiRequest[]): boolean => {
             padding: 32px;
             color: ${REPORT_THEME.textPrimary};
             background: ${REPORT_THEME.surface};
-            font-family:
-              Inter,
-              -apple-system,
-              BlinkMacSystemFont,
-              "Segoe UI",
-              sans-serif;
+            font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
           }
 
           main {
@@ -304,14 +297,9 @@ const openPrintableReport = (requests: ApiRequest[]): boolean => {
 
           <table>
             <thead>
-              <tr>
-                ${headerHtml}
-              </tr>
+              <tr>${headerHtml}</tr>
             </thead>
-
-            <tbody>
-              ${rowsHtml}
-            </tbody>
+            <tbody>${rowsHtml}</tbody>
           </table>
         </main>
       </body>
@@ -320,9 +308,7 @@ const openPrintableReport = (requests: ApiRequest[]): boolean => {
 
   const printWindow = window.open("", "_blank");
 
-  if (!printWindow) {
-    return false;
-  }
+  if (!printWindow) return false;
 
   printWindow.document.open();
   printWindow.document.write(html);
@@ -337,6 +323,9 @@ const openPrintableReport = (requests: ApiRequest[]): boolean => {
 
   return true;
 };
+
+const labelClass =
+  "font-label-sm font-semibold uppercase tracking-wide text-text-secondary";
 
 export const ExportModal: React.FC<ExportModalProps> = ({
   isOpen,
@@ -421,22 +410,18 @@ export const ExportModal: React.FC<ExportModalProps> = ({
     }, 1200);
   };
 
+ 
   const completionLabel = format === "print" ? "Opened" : "Exported";
 
   return (
     <Modal
       isOpen={isOpen}
       onClose={handleClose}
-      title="Request report"
-      description="Choose how you'd like to export your request data."
+      title="Export Requests"
+      description="Choose a format to export your API request data."
       footer={
-        <div className="flex w-full flex-col-reverse gap-2 sm:flex-row sm:items-center sm:justify-end">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleClose}
-            className="w-full sm:w-auto"
-          >
+        <div className="flex w-full items-center justify-end gap-2">
+          <Button variant="ghost" size="sm" onClick={handleClose}>
             Cancel
           </Button>
 
@@ -445,7 +430,6 @@ export const ExportModal: React.FC<ExportModalProps> = ({
             size="sm"
             onClick={handleExport}
             disabled={!hasRequests || completed}
-            className="w-full sm:w-auto"
           >
             {completed ? (
               <>
@@ -466,23 +450,27 @@ export const ExportModal: React.FC<ExportModalProps> = ({
         </div>
       }
     >
-      <div className="space-y-4">
+      <div className="space-y-5">
+        {/* Format */}
         <section aria-labelledby="export-format">
-          <div className="mb-2">
+          <div className="mb-2.5">
             <h3
               id="export-format"
-              className="font-label-sm font-semibold uppercase tracking-[0.08em] text-text-secondary"
+              className="text-[12px] font-medium text-text-primary"
             >
-              Export format
+              Export Format
             </h3>
+            <p className="mt-1 text-[11px] leading-4 text-text-secondary">
+              Select the file format you want to use.
+            </p>
           </div>
 
           <div
-            className="grid gap-2 @sm:grid-cols-3"
+            className="overflow-hidden rounded-md border border-border-default"
             role="radiogroup"
             aria-label="Choose export format"
           >
-            {formatOptions.map((option) => {
+            {formatOptions.map((option, index) => {
               const isSelected = format === option.id;
               const Icon = option.icon;
 
@@ -497,49 +485,46 @@ export const ExportModal: React.FC<ExportModalProps> = ({
                     setError("");
                   }}
                   className={cn(
-                    "flex min-w-0 items-center gap-2.5 rounded-md border px-3 py-2.5 text-left outline-none transition-colors duration-150",
-                    "focus-visible:ring-1 focus-visible:ring-accent",
+                    "flex w-full items-center gap-3 px-3 py-3 text-left transition-colors duration-150",
+                    index > 0 && "border-t border-border-default",
+                    "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-accent",
                     isSelected
-                      ? "border-accent bg-accent-soft"
-                      : "border-border-default bg-surface hover:border-accent/40 hover:bg-surface-muted",
+                      ? "bg-accent-soft/60"
+                      : "bg-surface hover:bg-surface-muted",
                   )}
                 >
                   <span
                     className={cn(
-                      "flex h-7 w-7 shrink-0 items-center justify-center rounded-md border",
+                      "flex h-8 w-8 shrink-0 items-center justify-center rounded-md border",
                       isSelected
                         ? "border-accent/20 bg-surface text-accent"
                         : "border-border-default bg-surface-muted text-text-secondary",
                     )}
                   >
-                    <Icon className="h-3.5 w-3.5" aria-hidden="true" />
+                    <Icon className="h-4 w-4" aria-hidden="true" />
                   </span>
 
                   <span className="min-w-0 flex-1">
-                    <span
-                      className={cn(
-                        "block font-label-md font-semibold",
-                        isSelected ? "text-accent" : "text-text-primary",
-                      )}
-                    >
+                    <span className="block text-[12px] font-medium text-text-primary">
                       {option.label}
                     </span>
-
-                    <span className="mt-0.5 block truncate text-[10px] leading-4 text-text-secondary">
+                    <span className="mt-0.5 block text-[11px] leading-4 text-text-secondary">
                       {option.description}
                     </span>
                   </span>
 
                   <span
                     className={cn(
-                      "flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full border",
+                      "flex h-4 w-4 shrink-0 items-center justify-center rounded-full border",
                       isSelected
-                        ? "border-accent bg-accent text-white"
+                        ? "border-accent bg-accent"
                         : "border-border-default bg-surface",
                     )}
                     aria-hidden="true"
                   >
-                    {isSelected && <Check className="h-2.5 w-2.5" />}
+                    {isSelected && (
+                      <Check className="h-2.5 w-2.5 text-white" />
+                    )}
                   </span>
                 </button>
               );
@@ -547,72 +532,96 @@ export const ExportModal: React.FC<ExportModalProps> = ({
           </div>
         </section>
 
+        {/* Export Summary */}
         <section
-          aria-label="Export summary"
-          className="border-y border-border-default py-3"
+          aria-labelledby="export-summary"
+          className="border-y border-border-default py-3.5"
         >
+          <div className="mb-3">
+            <h3
+              id="export-summary"
+              className="text-[12px] font-medium text-text-primary"
+            >
+              Export Summary
+            </h3>
+            <p className="mt-1 text-[11px] text-text-secondary">
+              Data included in this export.
+            </p>
+          </div>
+
           <dl className="grid grid-cols-3 gap-3">
             <div className="min-w-0">
-              <dt className="font-label-sm text-text-secondary">Records</dt>
-              <dd className="mt-0.5 truncate font-code-inline font-semibold text-text-primary">
+              <dt className="text-[11px] text-text-secondary">Records</dt>
+              <dd className="mt-1 text-[13px] font-semibold text-text-primary">
                 {requests.length.toLocaleString()}
               </dd>
             </div>
 
             <div className="min-w-0 border-l border-border-default pl-3">
-              <dt className="font-label-sm text-text-secondary">Includes</dt>
-              <dd className="mt-0.5 truncate font-code-inline font-semibold text-text-primary">
-                {EXPORT_COLUMNS.length} fields
+              <dt className="text-[11px] text-text-secondary">Fields</dt>
+              <dd className="mt-1 text-[13px] font-semibold text-text-primary">
+                {EXPORT_COLUMNS.length}
               </dd>
             </div>
 
             <div className="min-w-0 border-l border-border-default pl-3">
-              <dt className="font-label-sm text-text-secondary">Scope</dt>
-              <dd className="mt-0.5 truncate text-[11px] font-medium text-text-primary">
-                Current view
+              <dt className="text-[11px] text-text-secondary">Format</dt>
+              <dd className="mt-1 truncate text-[12px] font-medium text-text-primary">
+                {selectedOption?.label}
               </dd>
             </div>
           </dl>
         </section>
 
+        {/* Included Fields */}
         <section aria-labelledby="included-fields">
-          <div className="mb-2 flex items-center gap-2">
+          <div className="mb-2.5 flex items-center justify-between gap-3">
             <h3
               id="included-fields"
-              className="font-label-sm font-semibold uppercase tracking-[0.08em] text-text-secondary"
+              className="text-[12px] font-medium text-text-primary"
             >
-              Included fields
+              Included Fields
             </h3>
-
-            <span className="rounded bg-accent-soft px-1.5 py-0.5 font-label-sm text-accent">
-              {EXPORT_COLUMNS.length}
+            <span className="text-[11px] text-text-secondary">
+              {EXPORT_COLUMNS.length} fields
             </span>
           </div>
 
-          <div className="flex flex-wrap gap-1.5">
+          <div className="grid grid-cols-2 gap-x-4 gap-y-2.5">
             {EXPORT_COLUMNS.map((column) => (
-              <span
+              <div
                 key={column.key}
-                className="rounded border border-border-default bg-surface-muted px-2 py-1 font-code-inline text-[10px] text-text-secondary"
+                className="flex min-w-0 items-center gap-2"
               >
-                {column.label}
-              </span>
+                <Check
+                  className="h-3 w-3 shrink-0 text-success"
+                  aria-hidden="true"
+                />
+                <span className="truncate text-[11px] text-text-secondary">
+                  {column.label}
+                </span>
+              </div>
             ))}
           </div>
         </section>
 
+        {/* Empty State */}
         {!hasRequests && (
-          <div className="border-l-2 border-warning bg-warning/4 px-3 py-2.5">
+          <div
+            role="status"
+            className="rounded-md border border-warning/20 bg-warning/[0.04] px-3 py-2.5"
+          >
             <p className="text-[11px] leading-4 text-warning">
               No request records are available in the current view.
             </p>
           </div>
         )}
 
+        {/* Error */}
         {error && (
           <div
             role="alert"
-            className="border-l-2 border-danger bg-danger/4 px-3 py-2.5"
+            className="rounded-md border border-danger/20 bg-danger/[0.04] px-3 py-2.5"
           >
             <p className="text-[11px] leading-4 text-danger">{error}</p>
           </div>
@@ -621,3 +630,6 @@ export const ExportModal: React.FC<ExportModalProps> = ({
     </Modal>
   );
 };
+
+
+
